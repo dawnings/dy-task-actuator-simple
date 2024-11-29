@@ -67,7 +67,7 @@ public class MontiorTest {
         System.out.println("start");
 
 
-        TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder(new CoreConfig<>())
+        TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder()
                 .dataFetchInterface((lastList, fetchCount) -> {
                     List<TaskData> list = new ArrayList<>();
                     for (int i = 0; i < fetchCount; i++) {
@@ -83,7 +83,7 @@ public class MontiorTest {
                 .taskRunnerInterface((taskData) -> {
 //                    final String name = Thread.currentThread().getName();
 //                    System.out.println("runt:" + name);
-                    Thread.sleep(RandomUtil.randomInt(100, 4000));
+                    Thread.sleep(RandomUtil.randomInt(2000, 8000));
 //                    System.out.println(".");
                 })
                 .monitorTaskInterface((taskData) -> {
@@ -92,14 +92,14 @@ public class MontiorTest {
                 .monitorCacuRateInterface(new MonitorCacuRateFor5s())
                 .monitorRateDealInterface((monitorRates, key, count, lastSize) -> {
 //                    if (monitorRates.values().size() > 1) {
-                        System.out.println(key+"  -----平均5s" + count + "个任务，最近5s执行了"+lastSize+"个任务");
+                    System.out.println(key + "  -----平均5s" + count + "个任务，最近5s执行了" + lastSize + "个任务");
 //                        final String name = Thread.currentThread().getName();
 //                        System.out.println("mrdi:" + name);
 //                        System.out.println("\n 1111 exit");
 //                        TaskActuatorBuilder.taskActuatorMap.get(name).exitActuator();
-                        if (monitorRates.values().size() > 10) {
-                            latch.countDown();
-                        }
+                    if (monitorRates.values().size() > 10) {
+                        latch.countDown();
+                    }
 //                    }
 //                    monitorRates.
                 })
@@ -110,4 +110,11 @@ public class MontiorTest {
         latch.await();
     }
 
+
+    @Test
+    public void test3() {
+        TaskActuatorBuilder<TaskData> builder = TaskActuatorBuilder.<TaskData>builder();
+        builder.build();
+
+    }
 }

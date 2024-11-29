@@ -16,7 +16,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -24,37 +23,66 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class TaskActuator<T> {
-    private ExecutorService taskActuatorsExecutor;
-    private ScheduledExecutorService fillMonitorRateExecutor;
-    private ThreadPoolExecutor monitorAlarmExecutor;
-    private boolean stop;
+    //监控数据
+    private LimitSizeMap<String, AtomicInteger> monitorRates;
 
-    private CoreConfig<T> configs;
-    private ThreadPoolExecutor taskExecutor;
-    private ThreadPoolExecutor fetchDataExecutor;
+    //最后一次数据获取时间
     @Getter
     private LocalDateTime lastFetchTime;
+    //最后一次数据获取的数量
     @Getter
     private int lastFetchCount;
-    private BlockingQueue<T> replenishQueue;
+    //用于存储上一次数据填充任务的返回结果，以便后续fetch数据时避让
+    @Getter
     private List<T> lastFatchData;
-    private DataFetchInterface<T> dataFetchInterface;
-    private TaskRunnerInterface<T> taskRunnerInterface;
-    private TaskCallBackInterface<T> taskCallBackInterface;
-    private MonitorTaskInterface<T> monitorTaskInterface;
-    private MonitorStatusInterface<T> monitorStatusInterface;
-    private MonitorDataFetchInterface<T> monitorDataFetchInterface;
-    private MonitorCacuRateInterface monitorCacuRateInterface;
-    private MonitorRateDealInterface monitorRateDealInterface;
+    //执行器线程的名称
     @Getter
     private String threadName;
-    private LimitSizeMap<String, AtomicInteger> monitorRates;
+    //执行器自身所在的线程池，单线程定时从队列中获取任务，经过测试，低于20ms执行效率不会有提升，但会有显著的cpu消耗增加
+    private ScheduledExecutorService taskActuatorsExecutor;
+    //用于填充监控的线程池，定时获取令牌填充防止漏填充
+    private ScheduledExecutorService fillMonitorRateExecutor;
+    //监控回调线程池，为保证监控回调不会阻塞任务
+    private ThreadPoolExecutor monitorAlarmExecutor;
+    //真正的任务执行线程池
+    private ThreadPoolExecutor taskExecutor;
+    //数据填充任务线程池，单线程，多余任务直接抛弃
+    private ThreadPoolExecutor fetchDataExecutor;
+
+    //执行状态，标记为true后整个执行器终止，无法自动恢复
+    private boolean stop;
+    //总体配置
+    private CoreConfig<T> configs;
+    //用于发布任务的队列
+    private BlockingQueue<T> replenishQueue;
+    //数据获取接口
+    private DataFetchInterface<T> dataFetchInterface;
+    //任务执行接口
+    private TaskRunnerInterface<T> taskRunnerInterface;
+    //任务回调接口
+    private TaskCallBackInterface<T> taskCallBackInterface;
+    //任务监控回调接口
+    private MonitorTaskInterface<T> monitorTaskInterface;
+    //执行器状态回调接口
+    private MonitorStatusInterface<T> monitorStatusInterface;
+    //数据获取回调接口
+    private MonitorDataFetchInterface<T> monitorDataFetchInterface;
+    //监控速度计算接口
+    private MonitorCacuRateInterface monitorCacuRateInterface;
+    //监控速率回调接口
+    private MonitorRateDealInterface monitorRateDealInterface;
+
 
     public void start() {
         if (configs == null) {
             throw new RuntimeException("configs is null");
         }
-        taskActuatorsExecutor.execute(this::execute);
+        fetchData(false);
+        taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, 1, 20, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean hadShutDown() {
+        return taskExecutor.isShutdown() && taskExecutor.isTerminated();
     }
 
     public void exitActuator() {
@@ -83,7 +111,7 @@ public class TaskActuator<T> {
         replenishQueue = new LinkedBlockingQueue<>(configs.getTaskLimitMax());
 
         threadName = "taskActuator-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4);
-        taskActuatorsExecutor = Executors.newSingleThreadExecutor((r -> {
+        taskActuatorsExecutor = Executors.newSingleThreadScheduledExecutor((r -> {
             Thread t = Executors.defaultThreadFactory().newThread(r);
             t.setName(threadName);
             t.setDaemon(false);
@@ -116,12 +144,10 @@ public class TaskActuator<T> {
                 t.setDaemon(false);
                 return t;
             }));
-            final LocalDateTime localDateTime = LocalDateTime.now().plusMinutes(1).withSecond(0);
-            final long delay = (localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() - System.currentTimeMillis()) / 1000;
             fillMonitorRateExecutor.scheduleWithFixedDelay(() -> {
                 final String monitorFormat = monitorCacuRateInterface.getMonitorFormat();
                 addMonitorRate(monitorFormat);
-            }, delay, 1, TimeUnit.SECONDS);
+            }, 10, 500, TimeUnit.MICROSECONDS);
             monitorAlarmExecutor = new ThreadPoolExecutor(1, 1, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(configs.getBatchLimitMin()),
                     (r -> {
                         Thread t = Executors.defaultThreadFactory().newThread(r);
@@ -180,54 +206,53 @@ public class TaskActuator<T> {
 
 
     private void execute() {
-        fetchData(false);
-        while (!taskActuatorsExecutor.isTerminated()) {
-            if (stopped()) {
+
+        if (stopped()) {
+            return;
+        }
+        try {
+
+            //因其他原因产生的停机
+            if (waiting()) {
+                Thread.sleep(1000 * 60 * 5);
                 return;
             }
-            try {
-                Thread.sleep(0);
-                //因其他原因产生的停机
-                if (waiting()) {
-                    Thread.sleep(1000 * 60 * 5);
-                    continue;
-                }
-                //利用poll的延迟时间实现超时(定时)更新
-                final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.MINUTES);
-                if (poll == null) {
-                    fetchDataExecutor.submit(() -> {
-                        fetchData(true);
-                    });
-                    continue;
-                }
-                final Future<MontorTaskDto<T>> submit = taskExecutor.submit(() -> {
-                    MontorTaskDto<T> montorTaskDto = new MontorTaskDto<>();
-                    montorTaskDto.setTaskData(poll);
-                    try {
-                        taskRunnerInterface.didTaskRunner(poll);
-                        montorTaskDto.setTaskStatus(true);
-                        if (taskCallBackInterface != null) taskCallBackInterface.callbackSuccess(poll);
-                    } catch (Exception e) {
-                        if (taskCallBackInterface != null) taskCallBackInterface.callbackError(poll, e);
-                        montorTaskDto.setException(e);
-                    } finally {
-                        fetchDataExecutor.submit(() -> {
-                            fetchData(false);
-                        });
-                    }
-                    return montorTaskDto;
+            //利用poll的延迟时间实现超时(定时)更新
+            final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.MINUTES);
+            if (poll == null) {
+                fetchDataExecutor.submit(() -> {
+                    fetchData(true);
+
                 });
-                if (monitorTaskInterface != null) monitorTaskInterface.monitor(submit);
-                if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
-                    String monitorKey = monitorCacuRateInterface.getMonitorFormat();
-                    monitorRate(monitorKey);
-                }
-
-
-            } catch (Exception e) {
-                log.error(e.getMessage());
-                if (monitorStatusInterface != null) monitorStatusInterface.monitor(false, e);
+                return;
             }
+            final Future<MontorTaskDto<T>> submit = taskExecutor.submit(() -> {
+                MontorTaskDto<T> montorTaskDto = new MontorTaskDto<>();
+                montorTaskDto.setTaskData(poll);
+                try {
+                    taskRunnerInterface.didTaskRunner(poll);
+                    montorTaskDto.setTaskStatus(true);
+                    if (taskCallBackInterface != null) taskCallBackInterface.callbackSuccess(poll);
+                } catch (Exception e) {
+                    if (taskCallBackInterface != null) taskCallBackInterface.callbackError(poll, e);
+                    montorTaskDto.setException(e);
+                } finally {
+                    fetchDataExecutor.submit(() -> {
+                        fetchData(false);
+                    });
+                }
+                return montorTaskDto;
+            });
+            if (monitorTaskInterface != null) monitorTaskInterface.monitor(submit);
+            if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
+                String monitorKey = monitorCacuRateInterface.getMonitorFormat();
+                monitorRate(monitorKey);
+            }
+
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            if (monitorStatusInterface != null) monitorStatusInterface.monitor(false, e);
         }
     }
 

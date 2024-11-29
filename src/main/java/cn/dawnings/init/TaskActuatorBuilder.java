@@ -18,12 +18,20 @@ import java.util.HashMap;
 public class TaskActuatorBuilder<T> {
     public final static HashMap<String, TaskActuator<?>> taskActuatorMap = new HashMap<>();
 
-    public TaskActuatorBuilder(CoreConfig<T> coreConfig) {
-        this.coreConfig = coreConfig;
+    private TaskActuatorBuilder() {
+
     }
 
     public static <T> TaskActuatorBuilder<T> builder(CoreConfig<T> coreConfig) {
-        return new TaskActuatorBuilder<>(coreConfig);
+        final TaskActuatorBuilder<T> objectTaskActuatorBuilder = new TaskActuatorBuilder<>();
+        objectTaskActuatorBuilder.coreConfig = coreConfig;
+        return objectTaskActuatorBuilder;
+    }
+
+    public static <T> TaskActuatorBuilder<T> builder() {
+        final TaskActuatorBuilder<T> objectTaskActuatorBuilder = new TaskActuatorBuilder<>();
+        objectTaskActuatorBuilder.coreConfig = new CoreConfig<>();
+        return objectTaskActuatorBuilder;
     }
 
     private CoreConfig<T> coreConfig;
