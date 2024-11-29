@@ -5,7 +5,7 @@ import cn.dawnings.coustoms.DataFetchInterface;
 import cn.dawnings.coustoms.MonitorRateDealInterface;
 import cn.dawnings.coustoms.TaskCallBackInterface;
 import cn.dawnings.coustoms.TaskRunnerInterface;
-import cn.dawnings.defaults.MonitorCacuRateForMinute;
+import cn.dawnings.defaults.MonitorCacuRateFor1m;
 import cn.dawnings.monitor.MonitorDataFetchInterface;
 import cn.dawnings.monitor.MonitorCacuRateInterface;
 import cn.dawnings.monitor.MonitorStatusInterface;
@@ -19,7 +19,7 @@ public class CoreConfig<T> {
         taskLimitMax = 201;
         batchLimitMin = 100;
         threadCount = Runtime.getRuntime().availableProcessors() * 2 - 1;
-        monitorCacuRateInterface = new MonitorCacuRateForMinute();
+        monitorCacuRateInterface = new MonitorCacuRateFor1m();
     }
 
     @Getter

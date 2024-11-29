@@ -2,6 +2,7 @@ package cn.dawnings;
 
 import cn.dawnings.actuators.TaskActuator;
 import cn.dawnings.config.CoreConfig;
+import cn.dawnings.defaults.MonitorCacuRateFor5s;
 import cn.dawnings.init.TaskActuatorBuilder;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.RandomUtil;
@@ -15,7 +16,7 @@ public class MontiorTest {
 
 
     @Test
-    public void test() throws InterruptedException {
+    public void test1() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         System.out.println("start");
 
@@ -29,8 +30,8 @@ public class MontiorTest {
                         list.add(taskData);
                     }
                     final String name = Thread.currentThread().getName();
-                    System.out.println("fetchThread:" + name);
-                    System.out.println("\nfetchdata：" + list.size() + "条数据");
+//                    System.out.println("fetchThread:" + name);
+//                    System.out.println("\nfetchdata：" + list.size() + "条数据");
                     return list;
                 })
                 .taskRunnerInterface((taskData) -> {
@@ -41,16 +42,15 @@ public class MontiorTest {
                 })
                 .monitorTaskInterface((taskData) -> {
                     final String name = Thread.currentThread().getName();
-//                    System.out.println("mtt:" + name);
                 })
-                .monitorRateDealInterface((monitorRates, key, count) -> {
-                    if (monitorRates.values().size() > 1) {
+                .monitorRateDealInterface((monitorRates, key, count, lastSize) -> {
+                    if (monitorRates.values().size() > 2) {
                         System.out.println("-----平均每分钟" + count + "个任务");
 //                        final String name = Thread.currentThread().getName();
 //                        System.out.println("mrdi:" + name);
 //                        System.out.println("\n 1111 exit");
 //                        TaskActuatorBuilder.taskActuatorMap.get(name).exitActuator();
-//                        latch.countDown();
+                        latch.countDown();
                     }
 //                    monitorRates.
                 })
@@ -61,5 +61,53 @@ public class MontiorTest {
         latch.await();
     }
 
+    @Test
+    public void test2() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        System.out.println("start");
+
+
+        TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder(new CoreConfig<>())
+                .dataFetchInterface((lastList, fetchCount) -> {
+                    List<TaskData> list = new ArrayList<>();
+                    for (int i = 0; i < fetchCount; i++) {
+                        TaskData taskData = new TaskData();
+                        taskData.setId(new Snowflake().nextId());
+                        list.add(taskData);
+                    }
+//                    final String name = Thread.currentThread().getName();
+//                    System.out.println("fetchThread:" + name);
+//                    System.out.println("\nfetchdata：" + list.size() + "条数据");
+                    return list;
+                })
+                .taskRunnerInterface((taskData) -> {
+//                    final String name = Thread.currentThread().getName();
+//                    System.out.println("runt:" + name);
+                    Thread.sleep(RandomUtil.randomInt(100, 4000));
+//                    System.out.println(".");
+                })
+                .monitorTaskInterface((taskData) -> {
+                    final String name = Thread.currentThread().getName();
+                })
+                .monitorCacuRateInterface(new MonitorCacuRateFor5s())
+                .monitorRateDealInterface((monitorRates, key, count, lastSize) -> {
+//                    if (monitorRates.values().size() > 1) {
+                        System.out.println(key+"  -----平均5s" + count + "个任务，最近5s执行了"+lastSize+"个任务");
+//                        final String name = Thread.currentThread().getName();
+//                        System.out.println("mrdi:" + name);
+//                        System.out.println("\n 1111 exit");
+//                        TaskActuatorBuilder.taskActuatorMap.get(name).exitActuator();
+                        if (monitorRates.values().size() > 10) {
+                            latch.countDown();
+                        }
+//                    }
+//                    monitorRates.
+                })
+                .build();
+        build.start();
+        System.out.println("2");
+//        Thread.sleep(1000*60*1);
+        latch.await();
+    }
 
 }

@@ -13,11 +13,11 @@ import cn.dawnings.monitor.MonitorTaskInterface;
 import cn.dawnings.util.LimitSizeMap;
 import cn.hutool.core.util.RandomUtil;
 import lombok.Getter;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,13 +25,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class TaskActuator<T> {
     private ExecutorService taskActuatorsExecutor;
+    private ScheduledExecutorService fillMonitorRateExecutor;
+    private ThreadPoolExecutor monitorAlarmExecutor;
     private boolean stop;
 
     private CoreConfig<T> configs;
     private ThreadPoolExecutor taskExecutor;
     private ThreadPoolExecutor fetchDataExecutor;
     @Getter
-    private Date lastFetchTime;
+    private LocalDateTime lastFetchTime;
     @Getter
     private int lastFetchCount;
     private BlockingQueue<T> replenishQueue;
@@ -60,7 +62,8 @@ public class TaskActuator<T> {
         fetchDataExecutor.shutdown();
         taskExecutor.shutdown();
         taskActuatorsExecutor.shutdown();
-
+        fillMonitorRateExecutor.shutdown();
+        monitorAlarmExecutor.shutdown();
     }
 
     //初始化
@@ -102,9 +105,33 @@ public class TaskActuator<T> {
                     return t;
                 }));
         fetchDataExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+
         lastFatchData = new ArrayList<>(configs.getTaskLimitMax());
         monitorRates = new LimitSizeMap<>();
-        if (monitorCacuRateInterface != null) monitorRates.setMaxSize(monitorCacuRateInterface.getMonitorSize());
+        if (monitorCacuRateInterface != null && monitorRateDealInterface != null) {
+            monitorRates.setMaxSize(monitorCacuRateInterface.getMonitorSize());
+            fillMonitorRateExecutor = Executors.newSingleThreadScheduledExecutor((r -> {
+                Thread t = Executors.defaultThreadFactory().newThread(r);
+                t.setName(threadName + "-fillMonitorRate-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
+                t.setDaemon(false);
+                return t;
+            }));
+            final LocalDateTime localDateTime = LocalDateTime.now().plusMinutes(1).withSecond(0);
+            final long delay = (localDateTime.toInstant(ZoneOffset.of("+8")).toEpochMilli() - System.currentTimeMillis()) / 1000;
+            fillMonitorRateExecutor.scheduleWithFixedDelay(() -> {
+                final String monitorFormat = monitorCacuRateInterface.getMonitorFormat();
+                addMonitorRate(monitorFormat);
+            }, delay, 1, TimeUnit.SECONDS);
+            monitorAlarmExecutor = new ThreadPoolExecutor(1, 1, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(configs.getBatchLimitMin()),
+                    (r -> {
+                        Thread t = Executors.defaultThreadFactory().newThread(r);
+                        t.setName(threadName + "-monitorAlarm-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
+                        t.setDaemon(false);
+                        return t;
+                    }));
+            monitorAlarmExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        }
+
 
     }
 
@@ -117,7 +144,7 @@ public class TaskActuator<T> {
             return;
         }
         lastFetchCount = Math.min(fullCa, waitCa);
-        lastFetchTime = new Date();
+        lastFetchTime = LocalDateTime.now();
 
         try {
             if (monitorDataFetchInterface != null)
@@ -154,7 +181,7 @@ public class TaskActuator<T> {
 
     private void execute() {
         fetchData(false);
-        while (true) {
+        while (!taskActuatorsExecutor.isTerminated()) {
             if (stopped()) {
                 return;
             }
@@ -204,15 +231,25 @@ public class TaskActuator<T> {
         }
     }
 
-    @Synchronized
+    public synchronized void addMonitorRate(String key) {
+        if (!monitorRates.containsKey(key)) {
+            monitorRates.put(key, new AtomicInteger(0));
+            if (monitorRateDealInterface != null && monitorCacuRateInterface != null)
+                monitorAlarmExecutor.execute(() -> {
+                    final AtomicInteger lastSize = monitorRates.values().size() > 1 ? (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 2] : (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 1];
+                    monitorRateDealInterface.monitor(monitorRates, key, monitorCacuRateInterface.getRate(monitorRates), lastSize);
+                });
+        }
+    }
+
     public void monitorRate(String key) {
         if (monitorRates.containsKey(key)) {
             monitorRates.get(key).incrementAndGet();
         } else {
-            monitorRates.put(key, new AtomicInteger(1));
-            if (monitorRateDealInterface != null && monitorCacuRateInterface != null)
-                monitorRateDealInterface.monitor(monitorRates, key, monitorCacuRateInterface.getRate(monitorRates));
+            addMonitorRate(key);
+            monitorRates.get(key).incrementAndGet();
         }
+
     }
 
 }
