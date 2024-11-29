@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="49569229-d4cb-4be3-9ab8-25f8977fc4ff" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Readme.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/config/CoreConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/DataFetchInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/MonitorRateDealInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/TaskCallBackInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/TaskRunnerInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/defaults/MonitorCacuRateForMinute.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/dto/MonitorRateDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/dto/MontorTaskDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/init/TaskActuatorBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorCacuRateInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorDataFetchInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorStatusInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorTaskInterface.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/util/LimitSizeMap.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/cn/dawnings/MontiorTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/cn/dawnings/TaskData.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2pVzrVKjuYunSZceB3WIVuFrbDH" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showVisibilityIcons" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "JUnit.MontiorTest.test.executor": "Debug",
+    "Maven. [org.apache.maven.plugins:maven-archetype-plugin:RELEASE:generate].executor": "Run",
+    "Maven.task [clean].executor": "Run",
+    "Maven.task [package].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/Volumes/Codes/fanchen/task/src/main/java/cn/dawnings/config",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "库",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "http.proxy",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/java/cn/dawnings/config" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="cn.dawnings.monitor" />
+      <recent name="cn.dawnings.coustoms" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="MontiorTest.test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="task" />
+      <option name="PACKAGE_NAME" value="cn.dawnings" />
+      <option name="MAIN_CLASS_NAME" value="cn.dawnings.MontiorTest" />
+      <option name="METHOD_NAME" value="test" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.MontiorTest.test" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.23726.103" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.23726.103" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
