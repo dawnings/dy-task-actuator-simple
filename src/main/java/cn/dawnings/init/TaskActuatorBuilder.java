@@ -41,7 +41,10 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setTaskLimitMax(taskLimitMax);
         return this;
     }
-
+    public TaskActuatorBuilder<T> initDelay(int initDelay) {
+        coreConfig.setInitDelay(initDelay);
+        return this;
+    }
     public TaskActuatorBuilder<T> batchLimitMin(int batchLimitMin) {
         coreConfig.setBatchLimitMin(batchLimitMin);
         return this;

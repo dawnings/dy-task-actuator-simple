@@ -17,6 +17,7 @@ public class CoreConfig<T> {
     public CoreConfig() {
         pollMaxLimit = 5;
         taskLimitMax = 201;
+        initDelay=120;
         batchLimitMin = 100;
         threadCount = Runtime.getRuntime().availableProcessors() * 2 - 1;
         monitorCacuRateInterface = new MonitorCacuRateFor1m();
@@ -40,6 +41,9 @@ public class CoreConfig<T> {
     @Getter
     public boolean manualWait = false;
 
+    @Getter
+    @Setter
+    public int initDelay;
     public void setPollMaxLimit(int pollMaxLimit) {
         this.pollMaxLimit = pollMaxLimit;
     }

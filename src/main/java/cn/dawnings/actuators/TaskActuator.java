@@ -78,7 +78,7 @@ public class TaskActuator<T> {
             throw new RuntimeException("configs is null");
         }
         fetchData(false);
-        taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, 1, 20, TimeUnit.MILLISECONDS);
+        taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, configs.getInitDelay(), 20, TimeUnit.MILLISECONDS);
     }
 
     public boolean hadShutDown() {
