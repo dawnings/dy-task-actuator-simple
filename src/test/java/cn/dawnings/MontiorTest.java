@@ -68,6 +68,9 @@ public class MontiorTest {
 
 
         TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder()
+                .threadCount(10)
+                .taskLimitMax(5000)
+                .batchLimitMin(100)
                 .dataFetchInterface((lastList, fetchCount) -> {
                     List<TaskData> list = new ArrayList<>();
                     for (int i = 0; i < fetchCount; i++) {
@@ -83,7 +86,7 @@ public class MontiorTest {
                 .taskRunnerInterface((taskData) -> {
 //                    final String name = Thread.currentThread().getName();
 //                    System.out.println("runt:" + name);
-                    Thread.sleep(RandomUtil.randomInt(2000, 8000));
+                    Thread.sleep(RandomUtil.randomInt(500, 3000));
 //                    System.out.println(".");
                 })
                 .monitorTaskInterface((taskData) -> {

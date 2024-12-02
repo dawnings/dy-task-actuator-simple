@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TaskActuator<T> {
     //监控数据
     private LimitSizeMap<String, AtomicInteger> monitorRates;
-
+    private Semaphore semaphore;
     //最后一次数据获取时间
     @Getter
     private LocalDateTime lastFetchTime;
@@ -55,6 +55,7 @@ public class TaskActuator<T> {
     private CoreConfig<T> configs;
     //用于发布任务的队列
     private BlockingQueue<T> replenishQueue;
+    private BlockingQueue<Runnable> workingQueue;
     //数据获取接口
     private DataFetchInterface<T> dataFetchInterface;
     //任务执行接口
@@ -78,6 +79,7 @@ public class TaskActuator<T> {
             throw new RuntimeException("configs is null");
         }
         fetchData(false);
+        semaphore = new Semaphore(configs.getTaskLimitMax());
         taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, configs.getInitDelay(), 20, TimeUnit.MILLISECONDS);
     }
 
@@ -92,6 +94,7 @@ public class TaskActuator<T> {
         taskActuatorsExecutor.shutdown();
         fillMonitorRateExecutor.shutdown();
         monitorAlarmExecutor.shutdown();
+        semaphore.release(semaphore.availablePermits());
     }
 
     //初始化
@@ -117,8 +120,9 @@ public class TaskActuator<T> {
             t.setDaemon(false);
             return t;
         }));
+        workingQueue = new LinkedBlockingQueue<>(configs.getTaskLimitMax());
         taskExecutor = new ThreadPoolExecutor(configs.getThreadCount(), configs.getThreadCount(), 30L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(configs.getTaskLimitMax()),
+                workingQueue,
                 (r -> {
                     Thread t = Executors.defaultThreadFactory().newThread(r);
                     t.setName(threadName + "-task-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
@@ -163,7 +167,7 @@ public class TaskActuator<T> {
 
     private void fetchData(boolean isFromPoll) {
         if (stopped()) return;
-        int fullCa = taskExecutor.getQueue().remainingCapacity();
+        int fullCa = taskExecutor.getQueue().remainingCapacity() - taskExecutor.getQueue().size();
         int waitCa = replenishQueue.remainingCapacity();
         if (waitCa < configs.getBatchLimitMin() || fullCa < configs.getBatchLimitMin()) {
             if (monitorDataFetchInterface != null) monitorDataFetchInterface.monitor(-1, fullCa, waitCa, 0, 0, null);
@@ -222,11 +226,18 @@ public class TaskActuator<T> {
             if (poll == null) {
                 fetchDataExecutor.submit(() -> {
                     fetchData(true);
-
                 });
                 return;
             }
-            final Future<MontorTaskDto<T>> submit = taskExecutor.submit(() -> {
+
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                semaphore.release();
+                throw e;
+            }
+
+            taskExecutor.execute(() -> {
                 MontorTaskDto<T> montorTaskDto = new MontorTaskDto<>();
                 montorTaskDto.setTaskData(poll);
                 try {
@@ -237,13 +248,13 @@ public class TaskActuator<T> {
                     if (taskCallBackInterface != null) taskCallBackInterface.callbackError(poll, e);
                     montorTaskDto.setException(e);
                 } finally {
+                    semaphore.release();
                     fetchDataExecutor.submit(() -> {
                         fetchData(false);
                     });
                 }
-                return montorTaskDto;
+                if (monitorTaskInterface != null) monitorTaskInterface.monitor(montorTaskDto);
             });
-            if (monitorTaskInterface != null) monitorTaskInterface.monitor(submit);
             if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
                 String monitorKey = monitorCacuRateInterface.getMonitorFormat();
                 monitorRate(monitorKey);
@@ -251,6 +262,7 @@ public class TaskActuator<T> {
 
 
         } catch (Exception e) {
+
             log.error(e.getMessage());
             if (monitorStatusInterface != null) monitorStatusInterface.monitor(false, e);
         }
@@ -276,5 +288,6 @@ public class TaskActuator<T> {
         }
 
     }
+
 
 }
