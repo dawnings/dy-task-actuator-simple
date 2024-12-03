@@ -168,8 +168,10 @@ public class TaskActuator<T> {
 
     private void fetchData(boolean isFromPoll) {
         if (stopped()) return;
-        long diff = ChronoUnit.SECONDS.between(lastFetchTime, LocalDateTime.now());
-        if (diff < configs.getPollMinLimit()) return;
+        if (lastFetchTime != null) {
+            long diff = ChronoUnit.SECONDS.between(lastFetchTime, LocalDateTime.now());
+            if (diff < configs.getPollMinLimit()) return;
+        }
 
         int fullCa = taskExecutor.getQueue().remainingCapacity() - taskExecutor.getQueue().size();
         int waitCa = replenishQueue.remainingCapacity();
