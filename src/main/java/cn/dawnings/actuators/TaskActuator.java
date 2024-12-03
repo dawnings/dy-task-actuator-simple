@@ -180,7 +180,6 @@ public class TaskActuator<T> {
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(1, fullCa, waitCa, lastFetchCount, 0, null);
             final List<T> ts = dataFetchInterface.didDataFetch(lastFatchData, lastFetchCount);
-            lastFatchData.clear();
             if (ts == null) {
                 if (monitorDataFetchInterface != null)
                     monitorDataFetchInterface.monitor(-1, fullCa, waitCa, lastFetchCount, 0, null);
@@ -192,7 +191,6 @@ public class TaskActuator<T> {
                 monitorDataFetchInterface.monitor(2, fullCa, waitCa, lastFetchCount, lastFatchData.size(), null);
             replenishQueue.addAll(lastFatchData);
         } catch (Exception e) {
-            lastFatchData.clear();
             log.error(e.getMessage());
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(-1, fullCa, waitCa, lastFetchCount, 0, e);
@@ -249,6 +247,7 @@ public class TaskActuator<T> {
                     montorTaskDto.setException(e);
                 } finally {
                     semaphore.release();
+                    lastFatchData.remove(poll);
                     fetchDataExecutor.submit(() -> {
                         fetchData(false);
                     });
