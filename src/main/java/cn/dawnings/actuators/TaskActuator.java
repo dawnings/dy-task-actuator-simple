@@ -6,6 +6,8 @@ import cn.dawnings.coustoms.MonitorRateDealInterface;
 import cn.dawnings.coustoms.TaskCallBackInterface;
 import cn.dawnings.coustoms.TaskRunnerInterface;
 import cn.dawnings.dto.MontorTaskDto;
+import cn.dawnings.dto.ThreadPoolStatus;
+import cn.dawnings.init.TaskActuatorBuilder;
 import cn.dawnings.monitor.MonitorCacuRateInterface;
 import cn.dawnings.monitor.MonitorDataFetchInterface;
 import cn.dawnings.monitor.MonitorStatusInterface;
@@ -13,20 +15,27 @@ import cn.dawnings.monitor.MonitorTaskInterface;
 import cn.dawnings.util.LimitSizeMap;
 import cn.hutool.core.util.RandomUtil;
 import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import sun.reflect.Reflection;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
-public class TaskActuator<T> {
+public final class TaskActuator<T> {
     //监控数据
     private LimitSizeMap<String, AtomicInteger> monitorRates;
-    private Semaphore semaphore;
+    //任务队列信号量
+    private Semaphore semaphoreForTask;
+    //运行状态信号量
+    private Semaphore semaphoreForWait;
     //最后一次数据获取时间
     @Getter
     private LocalDateTime lastFetchTime;
@@ -77,10 +86,11 @@ public class TaskActuator<T> {
 
     public void start() {
         if (configs == null) {
-            throw new RuntimeException("configs is null");
+            throw new IllegalArgumentException("configs is null");
         }
-        fetchData(false);
-        semaphore = new Semaphore(configs.getTaskLimitMax());
+        fetchData();
+        semaphoreForTask = new Semaphore(configs.getTaskLimitMax());
+        semaphoreForWait = new Semaphore(1);
         taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, configs.getInitDelay(), 20, TimeUnit.MILLISECONDS);
     }
 
@@ -90,21 +100,31 @@ public class TaskActuator<T> {
 
     public void exitActuator() {
         stop = true;
+        semaphoreForWait.release();
         fetchDataExecutor.shutdown();
         taskExecutor.shutdown();
         taskActuatorsExecutor.shutdown();
         fillMonitorRateExecutor.shutdown();
         monitorAlarmExecutor.shutdown();
-        semaphore.release(semaphore.availablePermits());
+        semaphoreForTask.release(configs.getTaskLimitMax() - semaphoreForTask.availablePermits());
+
     }
 
-    //初始化
+    /**
+     * 初始化方法
+     * 禁止调用
+     *
+     * @param configs 初始化配置
+     */
     public void init(CoreConfig<T> configs) {
+        Class<?> caller = Reflection.getCallerClass(2);
+        if (caller != TaskActuatorBuilder.class)
+            throw new SecurityException("Unsafe");
         this.configs = configs;
         dataFetchInterface = configs.getDataFetchInterface();
-        if (dataFetchInterface == null) throw new RuntimeException("dataFetchInterface is null");
+        if (dataFetchInterface == null) throw new IllegalArgumentException("dataFetchInterface is null");
         taskRunnerInterface = configs.getTaskRunnerInterface();
-        if (taskRunnerInterface == null) throw new RuntimeException("taskRunnerInterface is null");
+        if (taskRunnerInterface == null) throw new IllegalArgumentException("taskRunnerInterface is null");
         taskCallBackInterface = configs.getTaskCallBackInterface();
 
         monitorTaskInterface = configs.getMonitorTaskInterface();
@@ -122,21 +142,18 @@ public class TaskActuator<T> {
             return t;
         }));
         workingQueue = new LinkedBlockingQueue<>(configs.getTaskLimitMax());
-        taskExecutor = new ThreadPoolExecutor(configs.getThreadCount(), configs.getThreadCount(), 30L, TimeUnit.SECONDS,
-                workingQueue,
-                (r -> {
-                    Thread t = Executors.defaultThreadFactory().newThread(r);
-                    t.setName(threadName + "-task-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
-                    t.setDaemon(false);
-                    return t;
-                }));
-        fetchDataExecutor = new ThreadPoolExecutor(1, 1, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(1),
-                (r -> {
-                    Thread t = Executors.defaultThreadFactory().newThread(r);
-                    t.setName(threadName + "-fetch-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
-                    t.setDaemon(false);
-                    return t;
-                }));
+        taskExecutor = new ThreadPoolExecutor(configs.getThreadCount(), configs.getThreadCount(), 30L, TimeUnit.SECONDS, workingQueue, (r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setName(threadName + "-task-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
+            t.setDaemon(false);
+            return t;
+        }));
+        fetchDataExecutor = new ThreadPoolExecutor(1, 1, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(1), (r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setName(threadName + "-fetch-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
+            t.setDaemon(false);
+            return t;
+        }));
         fetchDataExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
 
         lastFatchData = new ArrayList<>(configs.getTaskLimitMax());
@@ -153,21 +170,24 @@ public class TaskActuator<T> {
                 final String monitorFormat = monitorCacuRateInterface.getMonitorFormat();
                 addMonitorRate(monitorFormat);
             }, 10, 500, TimeUnit.MICROSECONDS);
-            monitorAlarmExecutor = new ThreadPoolExecutor(1, 1, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(configs.getBatchLimitMin()),
-                    (r -> {
-                        Thread t = Executors.defaultThreadFactory().newThread(r);
-                        t.setName(threadName + "-monitorAlarm-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
-                        t.setDaemon(false);
-                        return t;
-                    }));
+            monitorAlarmExecutor = new ThreadPoolExecutor(1, 2, configs.getPollMaxLimit(), TimeUnit.MINUTES, new LinkedBlockingDeque<>(10), (r -> {
+                Thread t = Executors.defaultThreadFactory().newThread(r);
+                t.setName(threadName + "-monitorAlarm-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4));
+                t.setDaemon(false);
+                return t;
+            }));
             monitorAlarmExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         }
 
 
     }
 
-    private void fetchData(boolean isFromPoll) {
-        if (stopped()) return;
+    @SneakyThrows
+    private void fetchData() {
+        if (this.stop || configs.manualWait) {
+            Thread.sleep(1000);
+            return;
+        }
         if (lastFetchTime != null) {
             long diff = ChronoUnit.SECONDS.between(lastFetchTime, LocalDateTime.now());
             if (diff < configs.getPollMinLimit()) return;
@@ -179,21 +199,20 @@ public class TaskActuator<T> {
             if (monitorDataFetchInterface != null) monitorDataFetchInterface.monitor(-1, fullCa, waitCa, 0, 0, null);
             return;
         }
-        lastFetchTime = LocalDateTime.now();
         lastFetchCount = Math.min(fullCa, waitCa);
-
         try {
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(1, fullCa, waitCa, lastFetchCount, 0, null);
-            final List<T> ts = dataFetchInterface.didDataFetch(lastFatchData, lastFetchCount);
+            List<T> ts = dataFetchInterface.didDataFetch(lastFatchData, lastFetchCount);
             if (ts == null || ts.isEmpty()) {
                 if (monitorDataFetchInterface != null)
                     monitorDataFetchInterface.monitor(-1, fullCa, waitCa, lastFetchCount, 0, null);
-                if (!isFromPoll) Thread.sleep(configs.getPollMaxLimit() * 60 * 1000L);
                 return;
             }
             lastFatchData.addAll(ts);
             replenishQueue.addAll(ts);
+            //释放一个list，某些jdk这个list对象有可能释放不掉
+            ts = null;
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(2, fullCa, waitCa, lastFetchCount, lastFatchData.size(), null);
         } catch (Exception e) {
@@ -201,79 +220,71 @@ public class TaskActuator<T> {
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(-1, fullCa, waitCa, lastFetchCount, 0, e);
         }
-    }
-
-    private boolean waiting() {
-        return configs.manualWait;
-//                || configs.stopFlag || isShutdown();
-    }
-
-    private boolean stopped() {
-        return configs.manualStop || stop;
+        lastFetchTime = LocalDateTime.now();
     }
 
 
     private void execute() {
-
-        if (stopped()) {
-            return;
-        }
+        if (stop) return;
         try {
-
             //因其他原因产生的停机
-            if (waiting()) {
-                Thread.sleep(1000 * 60 * 5);
+            if (configs.manualWait) {
+                semaphoreForWait.acquire();
                 return;
             }
             //利用poll的延迟时间实现超时(定时)更新
             final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.MINUTES);
             if (poll == null) {
-                fetchDataExecutor.submit(() -> {
-                    fetchData(true);
-                });
+                fetchDataExecutor.submit(this::fetchData);
                 return;
             }
-
             try {
-                semaphore.acquire();
+                semaphoreForTask.acquire();
             } catch (InterruptedException e) {
-                semaphore.release();
+                semaphoreForTask.release();
                 throw e;
             }
-
-            taskExecutor.execute(() -> {
-                MontorTaskDto<T> montorTaskDto = new MontorTaskDto<>();
-                montorTaskDto.setTaskData(poll);
-                try {
-                    taskRunnerInterface.didTaskRunner(poll);
-                    montorTaskDto.setTaskStatus(true);
-                    if (taskCallBackInterface != null) taskCallBackInterface.callbackSuccess(poll);
-                } catch (Exception e) {
-                    if (taskCallBackInterface != null) taskCallBackInterface.callbackError(poll, e);
-                    montorTaskDto.setException(e);
-                } finally {
-                    semaphore.release();
-                    lastFatchData.remove(poll);
-                    fetchDataExecutor.submit(() -> {
-                        fetchData(false);
-                    });
-                }
-                if (monitorTaskInterface != null) monitorTaskInterface.monitor(montorTaskDto);
-            });
-            if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
-                String monitorKey = monitorCacuRateInterface.getMonitorFormat();
-                monitorRate(monitorKey);
+            if (!taskExecutor.isTerminated()) {
+                taskExecutor.execute(() -> {
+                    MontorTaskDto<T> montorTaskDto = new MontorTaskDto<>();
+                    montorTaskDto.setTaskData(poll);
+                    try {
+                        taskRunnerInterface.didTaskRunner(poll);
+                        montorTaskDto.setTaskStatus(true);
+                        if (taskCallBackInterface != null) taskCallBackInterface.callbackSuccess(poll);
+                    } catch (Exception e) {
+                        try {
+                            if (taskCallBackInterface != null) taskCallBackInterface.callbackError(poll, e);
+                        } catch (Exception ex) {
+                            log.error(ex.getMessage());
+                        }
+                        montorTaskDto.setException(e);
+                    } finally {
+                        semaphoreForTask.release();
+                        lastFatchData.remove(poll);
+                    }
+                    fetchDataExecutor.submit(this::fetchData);
+                    try {
+                        if (monitorTaskInterface != null) monitorTaskInterface.monitor(montorTaskDto);
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    }
+                    if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
+                        monitorRate(monitorCacuRateInterface.getMonitorFormat());
+                    }
+                });
             }
 
-
-        } catch (Exception e) {
-
-            log.error(e.getMessage());
+        } catch (Throwable e) {
             if (monitorStatusInterface != null) monitorStatusInterface.monitor(false, e);
+            else {
+                log.error(e.getMessage());
+            }
         }
     }
 
-    public synchronized void addMonitorRate(String key) {
+    @Synchronized
+    private void addMonitorRate(String key) {
         if (!monitorRates.containsKey(key)) {
             monitorRates.put(key, new AtomicInteger(0));
             if (monitorRateDealInterface != null && monitorCacuRateInterface != null)
@@ -284,7 +295,7 @@ public class TaskActuator<T> {
         }
     }
 
-    public void monitorRate(String key) {
+    private void monitorRate(String key) {
         if (monitorRates.containsKey(key)) {
             monitorRates.get(key).incrementAndGet();
         } else {
@@ -292,6 +303,63 @@ public class TaskActuator<T> {
             monitorRates.get(key).incrementAndGet();
         }
 
+    }
+
+    /**
+     * 暂停
+     */
+    @Synchronized
+    public void waiting() {
+        configs.manualWait = true;
+    }
+
+    /**
+     * 恢复
+     */
+    @Synchronized
+    public void resume() {
+        if (configs.manualWait) {
+            configs.manualWait = false;
+            semaphoreForWait.release();
+        }
+    }
+
+    /**
+     * 更新核心线程数量
+     */
+    @Synchronized
+    public void updateThreadCount(int threadCount) {
+        this.configs.setThreadCount(threadCount);
+    }
+
+    /**
+     * 获取监控表
+     */
+    public LinkedHashMap<String, Integer> getMonitorRates() {
+        LinkedHashMap<String, Integer> map = new LinkedHashMap<>();
+        monitorRates.forEach((k, v) -> {
+            map.put(k, v.get());
+        });
+        return map;
+    }
+
+    /**
+     * 获取运行状态与参数
+     */
+    public ThreadPoolStatus getTaskPoolStatus() {
+        ThreadPoolStatus threadPoolStatus = new ThreadPoolStatus();
+        threadPoolStatus.setThreadName(threadName);
+        threadPoolStatus.setCorePoolSize(taskExecutor.getCorePoolSize());
+        threadPoolStatus.setActiveCount(taskExecutor.getActiveCount());
+        threadPoolStatus.setQueueMaxRemainingCapacity(taskExecutor.getQueue().remainingCapacity());
+        threadPoolStatus.setQueueSize(taskExecutor.getQueue().size());
+        threadPoolStatus.setQueueMax(configs.getTaskLimitMax());
+        threadPoolStatus.setBatchMinLimit(configs.getBatchLimitMin());
+        threadPoolStatus.setPollWaitMin(configs.getPollMinLimit());
+        threadPoolStatus.setPollWaitMax(configs.getPollMaxLimit());
+        threadPoolStatus.setLastFetchCount(this.getLastFetchCount());
+        threadPoolStatus.setLastFetchTime(this.getLastFetchTime());
+        return threadPoolStatus;
     }
 
 

@@ -66,7 +66,8 @@ public class MontiorTest {
         CountDownLatch latch = new CountDownLatch(1);
         System.out.println("start");
 
-
+        CoreConfig coreConfig = new CoreConfig();
+        coreConfig.setTaskLimitMax(100);
         TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder()
                 .threadCount(10)
                 .taskLimitMax(5000)

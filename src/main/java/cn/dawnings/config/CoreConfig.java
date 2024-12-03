@@ -6,14 +6,16 @@ import cn.dawnings.coustoms.MonitorRateDealInterface;
 import cn.dawnings.coustoms.TaskCallBackInterface;
 import cn.dawnings.coustoms.TaskRunnerInterface;
 import cn.dawnings.defaults.MonitorCacuRateFor1m;
+import cn.dawnings.init.TaskActuatorBuilder;
 import cn.dawnings.monitor.MonitorCacuRateInterface;
 import cn.dawnings.monitor.MonitorDataFetchInterface;
 import cn.dawnings.monitor.MonitorStatusInterface;
 import cn.dawnings.monitor.MonitorTaskInterface;
 import lombok.Getter;
 import lombok.Setter;
+import sun.reflect.Reflection;
 
-public class CoreConfig<T> {
+public final class CoreConfig<T> {
 
 
     public CoreConfig() {
@@ -26,16 +28,6 @@ public class CoreConfig<T> {
         monitorCacuRateInterface = new MonitorCacuRateFor1m();
     }
 
-    @Getter
-    public boolean manualStop = false;
-
-    public void stop() {
-        this.manualStop = true;
-    }
-
-    /*
-
-     */
     @Getter
     int taskLimitMax,
             batchLimitMin;
@@ -79,6 +71,9 @@ public class CoreConfig<T> {
     private MonitorRateDealInterface monitorRateDealInterface;
 
     public void setTaskLimitMax(int taskLimitMax) {
+        Class<?> caller = Reflection.getCallerClass(2);
+        if (caller != TaskActuatorBuilder.class)
+            throw new SecurityException("Unsafe");
         if (taskLimitMax < 10) throw new IllegalArgumentException("taskLimitMax  must be greater than 10");
         this.taskLimitMax = taskLimitMax;
     }
@@ -98,7 +93,4 @@ public class CoreConfig<T> {
         this.threadCount = threadCount;
     }
 
-    public void setManualWait(boolean manualWait) {
-        this.manualWait = manualWait;
-    }
 }
