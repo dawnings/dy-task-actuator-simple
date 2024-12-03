@@ -186,16 +186,16 @@ public class TaskActuator<T> {
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(1, fullCa, waitCa, lastFetchCount, 0, null);
             final List<T> ts = dataFetchInterface.didDataFetch(lastFatchData, lastFetchCount);
-            if (ts == null) {
+            if (ts == null || ts.isEmpty()) {
                 if (monitorDataFetchInterface != null)
                     monitorDataFetchInterface.monitor(-1, fullCa, waitCa, lastFetchCount, 0, null);
                 if (!isFromPoll) Thread.sleep(configs.getPollMaxLimit() * 60 * 1000L);
                 return;
             }
             lastFatchData.addAll(ts);
+            replenishQueue.addAll(ts);
             if (monitorDataFetchInterface != null)
                 monitorDataFetchInterface.monitor(2, fullCa, waitCa, lastFetchCount, lastFatchData.size(), null);
-            replenishQueue.addAll(lastFatchData);
         } catch (Exception e) {
             log.error(e.getMessage());
             if (monitorDataFetchInterface != null)
