@@ -6,18 +6,21 @@ import cn.dawnings.coustoms.MonitorRateDealInterface;
 import cn.dawnings.coustoms.TaskCallBackInterface;
 import cn.dawnings.coustoms.TaskRunnerInterface;
 import cn.dawnings.defaults.MonitorCacuRateFor1m;
-import cn.dawnings.monitor.MonitorDataFetchInterface;
 import cn.dawnings.monitor.MonitorCacuRateInterface;
+import cn.dawnings.monitor.MonitorDataFetchInterface;
 import cn.dawnings.monitor.MonitorStatusInterface;
 import cn.dawnings.monitor.MonitorTaskInterface;
 import lombok.Getter;
 import lombok.Setter;
 
 public class CoreConfig<T> {
+
+
     public CoreConfig() {
         pollMaxLimit = 5;
+        pollMinLimit = 30;
         taskLimitMax = 201;
-        initDelay=120;
+        initDelay = 120;
         batchLimitMin = 100;
         threadCount = Runtime.getRuntime().availableProcessors() * 2 - 1;
         monitorCacuRateInterface = new MonitorCacuRateFor1m();
@@ -35,7 +38,8 @@ public class CoreConfig<T> {
      */
     @Getter
     int taskLimitMax,
-            batchLimitMin, pollMaxLimit;
+            batchLimitMin;
+
     @Getter
     int threadCount;
     @Getter
@@ -44,9 +48,10 @@ public class CoreConfig<T> {
     @Getter
     @Setter
     public int initDelay;
-    public void setPollMaxLimit(int pollMaxLimit) {
-        this.pollMaxLimit = pollMaxLimit;
-    }
+    @Getter
+    @Setter
+    private int pollMinLimit, pollMaxLimit;
+
 
     @Setter
     @Getter

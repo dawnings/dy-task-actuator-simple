@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -167,14 +168,17 @@ public class TaskActuator<T> {
 
     private void fetchData(boolean isFromPoll) {
         if (stopped()) return;
+        long diff = ChronoUnit.SECONDS.between(lastFetchTime, LocalDateTime.now());
+        if (diff < configs.getPollMinLimit()) return;
+
         int fullCa = taskExecutor.getQueue().remainingCapacity() - taskExecutor.getQueue().size();
         int waitCa = replenishQueue.remainingCapacity();
         if (waitCa < configs.getBatchLimitMin() || fullCa < configs.getBatchLimitMin()) {
             if (monitorDataFetchInterface != null) monitorDataFetchInterface.monitor(-1, fullCa, waitCa, 0, 0, null);
             return;
         }
-        lastFetchCount = Math.min(fullCa, waitCa);
         lastFetchTime = LocalDateTime.now();
+        lastFetchCount = Math.min(fullCa, waitCa);
 
         try {
             if (monitorDataFetchInterface != null)
