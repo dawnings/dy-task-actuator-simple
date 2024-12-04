@@ -1,16 +1,15 @@
 package cn.dawnings.config;
 
 
-import cn.dawnings.coustoms.DataFetchInterface;
-import cn.dawnings.coustoms.MonitorRateDealInterface;
-import cn.dawnings.coustoms.TaskCallBackInterface;
-import cn.dawnings.coustoms.TaskRunnerInterface;
-import cn.dawnings.defaults.MonitorCacuRateFor1m;
+import cn.dawnings.coustoms.DataFetchSyncInterface;
+import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
+import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
+import cn.dawnings.coustoms.TaskRunnerSyncInterface;
+import cn.dawnings.defaults.CacuMonitorRateKeyFor10Min;
+import cn.dawnings.defaults.CacuMonitorRateKeyFor1M;
 import cn.dawnings.init.TaskActuatorBuilder;
-import cn.dawnings.monitor.MonitorCacuRateInterface;
-import cn.dawnings.monitor.MonitorDataFetchInterface;
-import cn.dawnings.monitor.MonitorStatusInterface;
-import cn.dawnings.monitor.MonitorTaskInterface;
+import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
+import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
 import lombok.Getter;
 import lombok.Setter;
 import sun.reflect.Reflection;
@@ -25,7 +24,7 @@ public final class CoreConfig<T> {
         initDelay = 120;
         batchLimitMin = 100;
         threadCount = Runtime.getRuntime().availableProcessors() * 2 - 1;
-        monitorCacuRateInterface = new MonitorCacuRateFor1m();
+        cacuMonitorRateKeyInterface = new CacuMonitorRateKeyFor1M();
     }
 
     @Getter
@@ -49,28 +48,28 @@ public final class CoreConfig<T> {
 
     @Setter
     @Getter
-    private TaskRunnerInterface<T> taskRunnerInterface;
+    private TaskRunnerSyncInterface<T> taskRunnerSyncInterface;
     @Setter
     @Getter
-    private TaskCallBackInterface<T> taskCallBackInterface;
+    private TaskCallBackAsyncInterface<T> taskCallBacksyncInterface;
     @Setter
     @Getter
-    private DataFetchInterface<T> dataFetchInterface;
+    private DataFetchSyncInterface<T> dataFetchSyncInterface;
     @Setter
     @Getter
-    private MonitorTaskInterface<T> monitorTaskInterface;
+    private MonitorDataFetchAsyncInterface<T> monitorDataFetchAsyncInterface;
+
+    public CacuMonitorRateKeyInterface getCacuMonitorRateKeyInterface() {
+        if (cacuMonitorRateKeyInterface == null) cacuMonitorRateKeyInterface = new CacuMonitorRateKeyFor10Min();
+        return cacuMonitorRateKeyInterface;
+    }
+
+    //    @Getter
     @Setter
-    @Getter
-    private MonitorStatusInterface<T> monitorStatusInterface;
-    @Setter
-    @Getter
-    private MonitorDataFetchInterface<T> monitorDataFetchInterface;
+    private volatile CacuMonitorRateKeyInterface cacuMonitorRateKeyInterface;
     @Getter
     @Setter
-    private MonitorCacuRateInterface monitorCacuRateInterface;
-    @Getter
-    @Setter
-    private MonitorRateDealInterface monitorRateDealInterface;
+    private MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface;
 
     public void setTaskLimitMax(int taskLimitMax) {
         Class<?> caller = Reflection.getCallerClass(2);

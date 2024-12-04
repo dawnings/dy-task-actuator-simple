@@ -7,10 +7,9 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(chain = true, fluent = true)
-public class MontorTaskDto<T> {
-    private T taskData;
+public class TaskCallBackDto<T> {
     private String taskName;
     private boolean status;
-    private String taskMsg;
     private Exception exception;
+    private T taskData;
 }

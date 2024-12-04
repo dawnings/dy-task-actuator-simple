@@ -1,4 +1,4 @@
-package cn.dawnings.dto;
+package cn.dawnings.dto.privates;
 
 import lombok.Data;
 

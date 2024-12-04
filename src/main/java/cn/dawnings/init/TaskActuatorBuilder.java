@@ -2,14 +2,12 @@ package cn.dawnings.init;
 
 import cn.dawnings.actuators.TaskActuator;
 import cn.dawnings.config.CoreConfig;
-import cn.dawnings.coustoms.DataFetchInterface;
-import cn.dawnings.coustoms.MonitorRateDealInterface;
-import cn.dawnings.coustoms.TaskCallBackInterface;
-import cn.dawnings.coustoms.TaskRunnerInterface;
-import cn.dawnings.monitor.MonitorCacuRateInterface;
-import cn.dawnings.monitor.MonitorDataFetchInterface;
-import cn.dawnings.monitor.MonitorStatusInterface;
-import cn.dawnings.monitor.MonitorTaskInterface;
+import cn.dawnings.coustoms.DataFetchSyncInterface;
+import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
+import cn.dawnings.coustoms.TaskRunnerSyncInterface;
+import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
+import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
+import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -27,10 +25,12 @@ public class TaskActuatorBuilder<T> {
      * 数据采集线程：taskActuator-name1-fetch-name3
      * 速率监控线程：taskActuator-name1-fillMonitorRate-name4
      * 通知线程：taskActuator-name1-monitorAlarm-name5
-
      */
     public final static HashMap<String, TaskActuator<?>> taskActuatorMap = new HashMap<>();
 
+    public static void removeTaskActuator(String taskName){
+
+    }
     private TaskActuatorBuilder() {
 
     }
@@ -51,6 +51,7 @@ public class TaskActuatorBuilder<T> {
 
     /**
      * 设定最大任务队列数量
+     *
      * @param taskLimitMax 最大任务队列数量
      * @return this
      */
@@ -58,13 +59,16 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setTaskLimitMax(taskLimitMax);
         return this;
     }
+
     public TaskActuatorBuilder<T> customTag(Object customTag) {
         coreConfig.setCustomTag(customTag);
         return this;
     }
+
     /**
      * 设定任务启动延迟时间
      * 单位：ms
+     *
      * @param initDelay 任务启动延迟时间（ms）
      * @return this
      */
@@ -75,6 +79,7 @@ public class TaskActuatorBuilder<T> {
 
     /**
      * 设定任务补充批次的最小尝试查询量
+     *
      * @param batchLimitMin 最小尝试查询量
      * @return this
      */
@@ -86,6 +91,7 @@ public class TaskActuatorBuilder<T> {
     /**
      * 设定任务补充队列的最大超时等待时间
      * 单位：min
+     *
      * @param pollMaxLimit 超时等待时间（min）
      * @return this
      */
@@ -93,9 +99,11 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setPollMaxLimit(pollMaxLimit);
         return this;
     }
+
     /**
      * 设定任务补充队列的最小间隔时间
      * 单位：sec
+     *
      * @param pollMinLimit 最小间隔时间（sec）
      * @return this
      */
@@ -103,8 +111,10 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setPollMinLimit(pollMinLimit);
         return this;
     }
+
     /**
      * 设定线程池大小
+     *
      * @param threadCount 线程池大小
      * @return this
      */
@@ -115,57 +125,51 @@ public class TaskActuatorBuilder<T> {
 
     /**
      * 设定数据抓取接口
-     * @param dataFetchInterface 数据抓取接口
+     *
+     * @param dataFetchSyncInterface 数据抓取接口
      * @return this
      */
-    public TaskActuatorBuilder<T> dataFetchInterface(DataFetchInterface<T> dataFetchInterface) {
-        coreConfig.setDataFetchInterface(dataFetchInterface);
+    public TaskActuatorBuilder<T> dataFetchInterface(DataFetchSyncInterface<T> dataFetchSyncInterface) {
+        coreConfig.setDataFetchSyncInterface(dataFetchSyncInterface);
         return this;
     }
 
     /**
      * 设定任务执行接口
-     * @param taskRunnerInterface 任务执行接口
+     *
+     * @param taskRunnerSyncInterface 任务执行接口
      * @return this
      */
-    public TaskActuatorBuilder<T> taskRunnerInterface(TaskRunnerInterface<T> taskRunnerInterface) {
-        coreConfig.setTaskRunnerInterface(taskRunnerInterface);
+    public TaskActuatorBuilder<T> taskRunnerInterface(TaskRunnerSyncInterface<T> taskRunnerSyncInterface) {
+        coreConfig.setTaskRunnerSyncInterface(taskRunnerSyncInterface);
         return this;
     }
 
     /**
      * 设定任务执行完回调接口
-     * @param taskCallBackInterface 回调接口
+     *
+     * @param taskCallBacksyncInterface 回调接口
      * @return this
      */
-    public TaskActuatorBuilder<T> taskCallBackInterface(TaskCallBackInterface<T> taskCallBackInterface) {
-        coreConfig.setTaskCallBackInterface(taskCallBackInterface);
-        return this;
-    }
-
-    public TaskActuatorBuilder<T> monitorTaskInterface(MonitorTaskInterface<T> monitorTaskInterface) {
-        coreConfig.setMonitorTaskInterface(monitorTaskInterface);
-        return this;
-    }
-
-    public TaskActuatorBuilder<T> monitorStatusInterface(MonitorStatusInterface<T> monitorStatusInterface) {
-        coreConfig.setMonitorStatusInterface(monitorStatusInterface);
-        return this;
-    }
-
-    public TaskActuatorBuilder<T> monitorDataFetchInterface(MonitorDataFetchInterface<T> monitorDataFetchInterface) {
-        coreConfig.setMonitorDataFetchInterface(monitorDataFetchInterface);
+    public TaskActuatorBuilder<T> taskCallBackInterface(TaskCallBackAsyncInterface<T> taskCallBacksyncInterface) {
+        coreConfig.setTaskCallBacksyncInterface(taskCallBacksyncInterface);
         return this;
     }
 
 
-    public TaskActuatorBuilder<T> monitorCacuRateInterface(MonitorCacuRateInterface monitorCacuRateInterface) {
-        coreConfig.setMonitorCacuRateInterface(monitorCacuRateInterface);
+    public TaskActuatorBuilder<T> monitorDataFetchInterface(MonitorDataFetchAsyncInterface<T> monitorDataFetchAsyncInterface) {
+        coreConfig.setMonitorDataFetchAsyncInterface(monitorDataFetchAsyncInterface);
         return this;
     }
 
-    public TaskActuatorBuilder<T> monitorRateDealInterface(MonitorRateDealInterface monitorRateDealInterface) {
-        coreConfig.setMonitorRateDealInterface(monitorRateDealInterface);
+
+    public TaskActuatorBuilder<T> monitorCacuRateInterface(CacuMonitorRateKeyInterface cacuMonitorRateKeyInterface) {
+        coreConfig.setCacuMonitorRateKeyInterface(cacuMonitorRateKeyInterface);
+        return this;
+    }
+
+    public TaskActuatorBuilder<T> monitorRateDealInterface(MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface) {
+        coreConfig.setMonitorRateMsgAsyncInterface(monitorRateMsgAsyncInterface);
         return this;
     }
 
@@ -176,7 +180,7 @@ public class TaskActuatorBuilder<T> {
         TaskActuator<T> taskActuators = new TaskActuator<>();
         taskActuators.setCustomTag(coreConfig.getCustomTag());
         taskActuators.init(coreConfig);
-        taskActuatorMap.put(taskActuators.getThreadName(), taskActuators);
+        taskActuatorMap.put(taskActuators.getTaskName(), taskActuators);
         return taskActuators;
     }
 }
