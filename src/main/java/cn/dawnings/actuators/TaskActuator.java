@@ -353,6 +353,7 @@ public final class TaskActuator<T> {
 
     /**
      * 更新核心线程数量
+     * @param threadCount 核心线程数量
      */
     public void updateThreadCount(int threadCount) {
         if (threadCount <= 1) {
@@ -382,6 +383,7 @@ public final class TaskActuator<T> {
 
     /**
      * 获取运行状态与参数
+     * return 运行状态
      */
     public ThreadPoolStatus getTaskPoolStatus() {
         ThreadPoolStatus threadPoolStatus = new ThreadPoolStatus();
