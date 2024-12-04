@@ -29,20 +29,22 @@ public final class CoreConfig<T> {
     }
 
     @Getter
-    int taskLimitMax,
+    volatile int taskLimitMax,
             batchLimitMin;
 
     @Getter
-    int threadCount;
+    volatile int threadCount;
     @Getter
-    public boolean manualWait = false;
-
+    public volatile boolean manualWait = false;
+    @Getter
+    @Setter
+    private volatile Object customTag;
     @Getter
     @Setter
     public int initDelay;
     @Getter
     @Setter
-    private int pollMinLimit, pollMaxLimit;
+    private volatile int pollMinLimit, pollMaxLimit;
 
 
     @Setter

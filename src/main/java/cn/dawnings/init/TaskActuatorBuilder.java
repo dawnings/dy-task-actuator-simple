@@ -58,6 +58,10 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setTaskLimitMax(taskLimitMax);
         return this;
     }
+    public TaskActuatorBuilder<T> customTag(Object customTag) {
+        coreConfig.setCustomTag(customTag);
+        return this;
+    }
     /**
      * 设定任务启动延迟时间
      * 单位：ms
@@ -170,6 +174,7 @@ public class TaskActuatorBuilder<T> {
             throw new IllegalArgumentException("Core configs are not set for the TaskActuatorBuilder.");
         }
         TaskActuator<T> taskActuators = new TaskActuator<>();
+        taskActuators.setCustomTag(coreConfig.getCustomTag());
         taskActuators.init(coreConfig);
         taskActuatorMap.put(taskActuators.getThreadName(), taskActuators);
         return taskActuators;

@@ -15,8 +15,8 @@ import cn.dawnings.monitor.MonitorTaskInterface;
 import cn.dawnings.util.LimitSizeMap;
 import cn.hutool.core.util.RandomUtil;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import sun.reflect.Reflection;
 
@@ -27,9 +27,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
 public final class TaskActuator<T> {
+    private Lock updateConfigLock;
+
+    private Lock rateAlarmLock;
     //监控数据
     private LimitSizeMap<String, AtomicInteger> monitorRates;
     //任务队列信号量
@@ -38,16 +43,21 @@ public final class TaskActuator<T> {
     private Semaphore semaphoreForWait;
     //最后一次数据获取时间
     @Getter
-    private LocalDateTime lastFetchTime;
+    private volatile LocalDateTime lastFetchTime;
     //最后一次数据获取的数量
     @Getter
-    private int lastFetchCount;
+    private volatile int lastFetchCount;
     //用于存储上一次数据填充任务的返回结果，以便后续fetch数据时避让
     @Getter
     private List<T> lastFatchData;
     //执行器线程的名称
     @Getter
     private String threadName;
+
+
+    @Setter
+    @Getter
+    private volatile Object customTag;
     //执行器自身所在的线程池，单线程定时从队列中获取任务，经过测试，低于20ms执行效率不会有提升，但会有显著的cpu消耗增加
     private ScheduledExecutorService taskActuatorsExecutor;
     //用于填充监控的线程池，定时获取令牌填充防止漏填充
@@ -60,9 +70,9 @@ public final class TaskActuator<T> {
     private ThreadPoolExecutor fetchDataExecutor;
 
     //执行状态，标记为true后整个执行器终止，无法自动恢复
-    private boolean stop;
+    private volatile boolean stop;
     //总体配置
-    private CoreConfig<T> configs;
+    private volatile CoreConfig<T> configs;
     //用于发布任务的队列
     private BlockingQueue<T> replenishQueue;
     private BlockingQueue<Runnable> workingQueue;
@@ -89,8 +99,15 @@ public final class TaskActuator<T> {
             throw new IllegalArgumentException("configs is null");
         }
         fetchData();
+
         semaphoreForTask = new Semaphore(configs.getTaskLimitMax());
         semaphoreForWait = new Semaphore(1);
+
+        updateConfigLock = new ReentrantLock();
+        if (monitorRateDealInterface != null && monitorCacuRateInterface != null) {
+            rateAlarmLock = new ReentrantLock();
+        }
+
         taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, configs.getInitDelay(), 20, TimeUnit.MILLISECONDS);
     }
 
@@ -98,17 +115,44 @@ public final class TaskActuator<T> {
         return taskExecutor.isShutdown() && taskExecutor.isTerminated();
     }
 
+    @SneakyThrows
+    public void fourceExitActuator() {
+        stop = true;
+        updateConfigLock.unlock();
+        if (rateAlarmLock != null)
+            rateAlarmLock.unlock();
+        semaphoreForTask.release(configs.getTaskLimitMax() + 1);
+        semaphoreForWait.release(2);
+        fetchDataExecutor.shutdownNow();
+        taskExecutor.shutdownNow();
+        taskActuatorsExecutor.shutdownNow();
+
+        if (fillMonitorRateExecutor != null)
+            fillMonitorRateExecutor.shutdownNow();
+        if (monitorAlarmExecutor != null)
+            monitorAlarmExecutor.shutdownNow();
+        monitorRates.clear();
+        monitorRates=null;
+    }
+
+    @SneakyThrows
     public void exitActuator() {
         stop = true;
-        semaphoreForWait.release();
+        updateConfigLock.unlock();
+        if (rateAlarmLock != null)
+            rateAlarmLock.unlock();
+        semaphoreForTask.release(configs.getTaskLimitMax() + 1);
+        semaphoreForWait.release(2);
         fetchDataExecutor.shutdown();
         taskExecutor.shutdown();
         taskActuatorsExecutor.shutdown();
-        fillMonitorRateExecutor.shutdown();
-        monitorAlarmExecutor.shutdown();
-        semaphoreForTask.release(configs.getTaskLimitMax() - semaphoreForTask.availablePermits());
 
+        if (fillMonitorRateExecutor != null)
+            fillMonitorRateExecutor.shutdown();
+        if (monitorAlarmExecutor != null)
+            monitorAlarmExecutor.shutdown();
     }
+
 
     /**
      * 初始化方法
@@ -263,7 +307,8 @@ public final class TaskActuator<T> {
                         semaphoreForTask.release();
                         lastFatchData.remove(poll);
                     }
-                    fetchDataExecutor.submit(this::fetchData);
+                    if (!stop)
+                        fetchDataExecutor.submit(this::fetchData);
                     try {
                         if (monitorTaskInterface != null) monitorTaskInterface.monitor(montorTaskDto);
                     } catch (Exception e) {
@@ -283,16 +328,21 @@ public final class TaskActuator<T> {
         }
     }
 
-    @Synchronized
     private void addMonitorRate(String key) {
-        if (!monitorRates.containsKey(key)) {
-            monitorRates.put(key, new AtomicInteger(0));
-            if (monitorRateDealInterface != null && monitorCacuRateInterface != null)
-                monitorAlarmExecutor.execute(() -> {
-                    final AtomicInteger lastSize = monitorRates.values().size() > 1 ? (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 2] : (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 1];
-                    monitorRateDealInterface.monitor(monitorRates, key, monitorCacuRateInterface.getRate(monitorRates), lastSize);
-                });
+        rateAlarmLock.lock();
+        try {
+            if (!monitorRates.containsKey(key)) {
+                monitorRates.put(key, new AtomicInteger(0));
+                if (monitorRateDealInterface != null && monitorCacuRateInterface != null)
+                    monitorAlarmExecutor.execute(() -> {
+                        final AtomicInteger lastSize = monitorRates.values().size() > 1 ? (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 2] : (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 1];
+                        monitorRateDealInterface.monitor(monitorRates, key, monitorCacuRateInterface.getRate(monitorRates), lastSize);
+                    });
+            }
+        } finally {
+            rateAlarmLock.unlock();
         }
+
     }
 
     private void monitorRate(String key) {
@@ -308,7 +358,6 @@ public final class TaskActuator<T> {
     /**
      * 暂停
      */
-    @Synchronized
     public void waiting() {
         configs.manualWait = true;
     }
@@ -316,18 +365,21 @@ public final class TaskActuator<T> {
     /**
      * 恢复
      */
-    @Synchronized
     public void resume() {
-        if (configs.manualWait) {
-            configs.manualWait = false;
-            semaphoreForWait.release();
+        updateConfigLock.lock();
+        try {
+            if (configs.manualWait) {
+                configs.manualWait = false;
+                semaphoreForWait.release();
+            }
+        } finally {
+            updateConfigLock.unlock();
         }
     }
 
     /**
      * 更新核心线程数量
      */
-    @Synchronized
     public void updateThreadCount(int threadCount) {
         this.configs.setThreadCount(threadCount);
     }

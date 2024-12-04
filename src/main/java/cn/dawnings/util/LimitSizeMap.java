@@ -13,7 +13,7 @@ public class LimitSizeMap<K, V> extends LinkedHashMap<K, V> {
         return size() > MAX_SIZE;
     }
 
-    private int MAX_SIZE = 1024; // 默认最大容量为1024
+    private volatile int MAX_SIZE = 1024; // 默认最大容量为1024
 
 
     @Override
