@@ -25,7 +25,7 @@ public class MontiorTest {
 
 
         TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder(new CoreConfig<>())
-                .dataFetchInterface((lastList, fetchCount) -> {
+                .dataFetchSyncInterface((lastList, fetchCount) -> {
                     List<TaskData> list = new ArrayList<>();
                     for (int i = 0; i < fetchCount; i++) {
                         TaskData taskData = new TaskData();
@@ -37,13 +37,13 @@ public class MontiorTest {
 //                    System.out.println("\nfetchdata：" + list.size() + "条数据");
                     return list;
                 })
-                .taskRunnerInterface((taskData) -> {
+                .taskRunnerSyncInterface((taskData) -> {
                     final String name = Thread.currentThread().getName();
 //                    System.out.println("runt:" + name);
                     Thread.sleep(RandomUtil.randomInt(1000, 4000));
                     System.out.print(".");
                 })
-                .monitorRateDealInterface((m) -> {
+                .monitorRateMsgAsyncInterface((m) -> {
                     System.out.println("-----平均每分钟" + m.rate() + "个任务");
 //                        final String name = Thread.currentThread().getName();
 //                        System.out.println("mrdi:" + name);
@@ -68,7 +68,7 @@ public class MontiorTest {
                 .taskLimitMax(800)
                 .batchLimitMin(200)
                 .pollMinLimit(2)
-                .dataFetchInterface((lastList, fetchCount) -> {
+                .dataFetchSyncInterface((lastList, fetchCount) -> {
                     List<TaskData> list = new ArrayList<>();
                     for (int i = 0; i < fetchCount; i++) {
                         TaskData taskData = new TaskData();
@@ -82,11 +82,11 @@ public class MontiorTest {
 ////                        System.out.println(m.status() + " " + m.fetchedCount() + "   " + m.taskName());
 //                    }
 //                })
-                .taskRunnerInterface((taskData) -> {
+                .taskRunnerSyncInterface((taskData) -> {
                     Thread.sleep(RandomUtil.randomInt(500, 3000));
                 })
-                .monitorCacuRateInterface(new CacuMonitorRateKeyFor5S())
-                .monitorRateDealInterface((m) -> {
+                .cacuMonitorRateKeyInterface(new CacuMonitorRateKeyFor5S())
+                .monitorRateMsgAsyncInterface((m) -> {
 //                    System.out.println(m.key() + "  -----平均5s" + m.rate() + "个任务，最近5s执行了" + m.lastSize() + "个任务");
                     final TaskActuator<?> taskActuator = TaskActuatorBuilder.taskActuatorMap.get(m.taskName());
                     final LinkedHashMap<String, Integer> monitorRates = taskActuator.getMonitorRates();
