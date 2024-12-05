@@ -82,6 +82,14 @@ public class TaskActuatorBuilder<T> {
         return this;
     }
 
+    public TaskActuatorBuilder<T> taskName(String taskName) {
+        if (taskActuatorMap.containsKey(taskName))
+            throw new RuntimeException("Task name already exists: " + taskName);
+        coreConfig.setTaskName(taskName);
+        return this;
+    }
+
+
     /**
      * 设定任务补充批次的最小尝试查询量
      *
@@ -180,6 +188,7 @@ public class TaskActuatorBuilder<T> {
 
     /**
      * 限流器判断接口
+     *
      * @param rateLimitAcceptInterface 限流器判断接口
      * @return this
      */
@@ -187,6 +196,7 @@ public class TaskActuatorBuilder<T> {
         coreConfig.setRateLimitAcceptInterface(rateLimitAcceptInterface);
         return this;
     }
+
     @Beta
     public TaskActuatorBuilder<T> rateLimiters(Map<String, RateLimiter> rateLimiters) {
         coreConfig.addRateLimiters(rateLimiters);
@@ -197,7 +207,8 @@ public class TaskActuatorBuilder<T> {
      * 添加一个限流器
      * <p>RateLimiter.create(double permitsPerSecond, SleepingStopwatch stopwatch)</p>
      * <p>利用key 来区分不同的限流器，同一个 key 的限流器可以被覆盖。可以通过key实现业务分流、也可以通过默认的实现多级分流</p>
-     * @param key 限流器key
+     *
+     * @param key         限流器key
      * @param rateLimiter 限流器
      * @return this
      */

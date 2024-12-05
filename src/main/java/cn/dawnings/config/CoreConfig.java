@@ -52,7 +52,9 @@ public final class CoreConfig<T> {
     @Setter
     private volatile int pollMinLimit, pollMaxLimit;
 
-
+    @Getter
+    @Setter
+    private volatile String taskName;
     @Setter
     @Getter
     private TaskRunnerSyncInterface<T> taskRunnerSyncInterface;
