@@ -7,6 +7,7 @@ import cn.dawnings.dto.ThreadPoolStatus;
 import cn.dawnings.init.TaskActuatorBuilder;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.RandomUtil;
+import com.google.common.util.concurrent.RateLimiter;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -154,6 +155,20 @@ public class MontiorTest {
                 })
         ;
         builder.taskName("yourTasName");
+
+//时级限流-每小时100个
+builder.addRateLimiter("hour", RateLimiter.create((double) 100 / 60 / 60));
+//分级限流-每分钟50个
+builder.addRateLimiter("min", RateLimiter.create((double) 50 / 60));
+//秒级限流-每秒钟10个
+builder.addRateLimiter("sec", RateLimiter.create(10));
+
+
+LinkedHashMap<String, RateLimiter> rateLimiters = new LinkedHashMap<>();
+rateLimiters.put("hour", RateLimiter.create((double) 100 / 60 / 60));
+rateLimiters.put("min", RateLimiter.create((double) 50 / 60));
+rateLimiters.put("sec", RateLimiter.create(10));
+builder.rateLimiters(rateLimiters);
         //构建执行器
         TaskActuator<TaskData> taskActuator = builder.build();
         //启动执行器

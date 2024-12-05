@@ -15,6 +15,7 @@ import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
@@ -195,7 +196,7 @@ public class TaskActuatorBuilder<T> {
     }
 
     @Beta
-    public TaskActuatorBuilder<T> rateLimiters(Map<String, RateLimiter> rateLimiters) {
+    public TaskActuatorBuilder<T> rateLimiters(LinkedHashMap<String, RateLimiter> rateLimiters) {
         coreConfig.addRateLimiters(rateLimiters);
         return this;
     }

@@ -21,6 +21,7 @@ import lombok.Setter;
 import sun.reflect.Reflection;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class CoreConfig<T> {
@@ -90,7 +91,7 @@ public final class CoreConfig<T> {
 
     @Beta
     @Getter
-    private volatile Map<String, RateLimiter> rateLimiters = new HashMap<>();
+    private volatile Map<String, RateLimiter> rateLimiters = new LinkedHashMap<>();
 
     @Beta
     public void addRateLimiters(Map<String, RateLimiter> rateLimiters) {
