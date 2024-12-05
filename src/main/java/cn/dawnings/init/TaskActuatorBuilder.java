@@ -33,7 +33,7 @@ public class TaskActuatorBuilder<T> {
     public final static HashMap<String, TaskActuator<?>> taskActuatorMap = new HashMap<>();
 
     public static void removeTaskActuator(String taskName) {
-
+        taskActuatorMap.remove(taskName);
     }
 
     private TaskActuatorBuilder() {
