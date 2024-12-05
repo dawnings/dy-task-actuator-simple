@@ -2,17 +2,24 @@ package cn.dawnings.config;
 
 
 import cn.dawnings.coustoms.DataFetchSyncInterface;
-import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
+import cn.dawnings.coustoms.RateLimitAcceptInterface;
 import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
 import cn.dawnings.coustoms.TaskRunnerSyncInterface;
 import cn.dawnings.defaults.CacuMonitorRateKeyFor10Min;
 import cn.dawnings.defaults.CacuMonitorRateKeyFor1M;
+import cn.dawnings.defaults.DefaultRateLimitAccept;
 import cn.dawnings.init.TaskActuatorBuilder;
 import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
 import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
+import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
+import com.google.common.annotations.Beta;
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
 import sun.reflect.Reflection;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public final class CoreConfig<T> {
 
@@ -34,7 +41,7 @@ public final class CoreConfig<T> {
     @Getter
     volatile int threadCount;
     @Getter
-    public volatile boolean manualWait = false;
+    public volatile boolean wait = false;
     @Getter
     @Setter
     private volatile Object customTag;
@@ -59,9 +66,31 @@ public final class CoreConfig<T> {
     @Getter
     private MonitorDataFetchAsyncInterface<T> monitorDataFetchAsyncInterface;
 
+    public RateLimitAcceptInterface getRateLimitAcceptInterface() {
+        if (rateLimitAcceptInterface == null) rateLimitAcceptInterface = new DefaultRateLimitAccept();
+        return rateLimitAcceptInterface;
+    }
+
+    @Setter
+    private RateLimitAcceptInterface rateLimitAcceptInterface;
+
     public CacuMonitorRateKeyInterface getCacuMonitorRateKeyInterface() {
         if (cacuMonitorRateKeyInterface == null) cacuMonitorRateKeyInterface = new CacuMonitorRateKeyFor10Min();
         return cacuMonitorRateKeyInterface;
+    }
+
+    @Beta
+    @Getter
+    private volatile Map<String, RateLimiter> rateLimiters = new HashMap<>();
+
+    @Beta
+    public void addRateLimiters(Map<String, RateLimiter> rateLimiters) {
+        this.rateLimiters.putAll(rateLimiters);
+    }
+
+    @Beta
+    public void addRateLimiter(String key, RateLimiter lim) {
+        rateLimiters.put(key, lim);
     }
 
     //    @Getter

@@ -3,14 +3,18 @@ package cn.dawnings.init;
 import cn.dawnings.actuators.TaskActuator;
 import cn.dawnings.config.CoreConfig;
 import cn.dawnings.coustoms.DataFetchSyncInterface;
+import cn.dawnings.coustoms.RateLimitAcceptInterface;
 import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
 import cn.dawnings.coustoms.TaskRunnerSyncInterface;
 import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
 import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
 import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
+import com.google.common.annotations.Beta;
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public class TaskActuatorBuilder<T> {
@@ -28,9 +32,10 @@ public class TaskActuatorBuilder<T> {
      */
     public final static HashMap<String, TaskActuator<?>> taskActuatorMap = new HashMap<>();
 
-    public static void removeTaskActuator(String taskName){
+    public static void removeTaskActuator(String taskName) {
 
     }
+
     private TaskActuatorBuilder() {
 
     }
@@ -170,6 +175,35 @@ public class TaskActuatorBuilder<T> {
 
     public TaskActuatorBuilder<T> monitorRateDealInterface(MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface) {
         coreConfig.setMonitorRateMsgAsyncInterface(monitorRateMsgAsyncInterface);
+        return this;
+    }
+
+    /**
+     * 限流器判断接口
+     * @param rateLimitAcceptInterface 限流器判断接口
+     * @return this
+     */
+    public TaskActuatorBuilder<T> rateLimitAcceptInterface(RateLimitAcceptInterface rateLimitAcceptInterface) {
+        coreConfig.setRateLimitAcceptInterface(rateLimitAcceptInterface);
+        return this;
+    }
+    @Beta
+    public TaskActuatorBuilder<T> rateLimiters(Map<String, RateLimiter> rateLimiters) {
+        coreConfig.addRateLimiters(rateLimiters);
+        return this;
+    }
+
+    /**
+     * 添加一个限流器
+     * <p>RateLimiter.create(double permitsPerSecond, SleepingStopwatch stopwatch)</p>
+     * <p>利用key 来区分不同的限流器，同一个 key 的限流器可以被覆盖。可以通过key实现业务分流、也可以通过默认的实现多级分流</p>
+     * @param key 限流器key
+     * @param rateLimiter 限流器
+     * @return this
+     */
+    @Beta
+    public TaskActuatorBuilder<T> addRateLimiter(String key, RateLimiter rateLimiter) {
+        coreConfig.addRateLimiter(key, rateLimiter);
         return this;
     }
 

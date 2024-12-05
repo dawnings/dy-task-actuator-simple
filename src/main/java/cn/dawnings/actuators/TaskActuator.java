@@ -2,6 +2,7 @@ package cn.dawnings.actuators;
 
 import cn.dawnings.config.CoreConfig;
 import cn.dawnings.coustoms.DataFetchSyncInterface;
+import cn.dawnings.coustoms.RateLimitAcceptInterface;
 import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
 import cn.dawnings.coustoms.TaskRunnerSyncInterface;
 import cn.dawnings.dto.MonitorDataFetchDto;
@@ -18,6 +19,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -45,6 +48,15 @@ public final class TaskActuator<T> {
     //运行状态信号量
     private MutableSemaphore semaphoreForWait;
     private MutableSemaphore semaphoreForFetchDataWait;
+
+    public Map<String, RateLimiter> getRateLimiters() {
+        return configs.getRateLimiters();
+    }
+
+    public void clearRateLimiters() {
+        configs.getRateLimiters().clear();
+    }
+
     //最后一次数据获取时间
     @Getter
     private volatile LocalDateTime lastFetchTime;
@@ -87,7 +99,8 @@ public final class TaskActuator<T> {
     private CacuMonitorRateKeyInterface cacuMonitorRateKeyInterface;
     //监控速率通知回调接口
     private MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface;
-
+    //限流桶验证接口
+    private RateLimitAcceptInterface rateLimitAcceptInterface;
 
     public void start() {
         if (configs == null) {
@@ -100,8 +113,9 @@ public final class TaskActuator<T> {
         Opt.ofNullable(cacuMonitorRateKeyInterface).ifPresent(a -> {
             rateKeyLock = new ReentrantLock();
         });
-        fetchData();
-        taskActuatorsExecutor.scheduleWithFixedDelay(this::execute, configs.getInitDelay(), 20, TimeUnit.MICROSECONDS);
+        if (dataFetchSyncInterface != null)
+            fetchData();
+        taskActuatorsExecutor.scheduleWithFixedDelay(this::consumeTaskData, configs.getInitDelay(), 20, TimeUnit.MICROSECONDS);
     }
 
     public boolean hadShutDown() {
@@ -158,11 +172,10 @@ public final class TaskActuator<T> {
         if (caller != TaskActuatorBuilder.class) throw new SecurityException("Unsafe");
         this.configs = configs;
         dataFetchSyncInterface = configs.getDataFetchSyncInterface();
-        if (dataFetchSyncInterface == null) throw new IllegalArgumentException("dataFetchInterface is null");
         taskRunnerSyncInterface = configs.getTaskRunnerSyncInterface();
         if (taskRunnerSyncInterface == null) throw new IllegalArgumentException("taskRunnerInterface is null");
         taskCallBacksyncInterface = configs.getTaskCallBacksyncInterface();
-
+        rateLimitAcceptInterface = configs.getRateLimitAcceptInterface();
         monitorDataFetchAsyncInterface = configs.getMonitorDataFetchAsyncInterface();
         cacuMonitorRateKeyInterface = configs.getCacuMonitorRateKeyInterface();
         monitorRateMsgAsyncInterface = configs.getMonitorRateMsgAsyncInterface();
@@ -202,7 +215,7 @@ public final class TaskActuator<T> {
     private void fetchData() {
         try {
             semaphoreForFetchDataWait.acquire();
-            if (this.stop || configs.manualWait) {
+            if (this.stop || configs.wait) {
                 ThreadUtil.sleep(1000);
                 return;
             }
@@ -244,29 +257,66 @@ public final class TaskActuator<T> {
     }
 
 
-    private void execute() {
+    /**
+     * 消费任务数据，发起任务，发起数据采集
+     */
+    private void consumeTaskData() {
         if (stop) return;
         try {
-            //因其他原因产生的停机
-            if (configs.manualWait) {
+            if (configs.wait) {
                 semaphoreForWait.acquire();
                 return;
             }
             //利用poll的延迟时间实现超时(定时)更新
             final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.MINUTES);
-            if (poll == null) {
+            if (poll == null && dataFetchSyncInterface != null) {
                 fetchData();
                 return;
             }
-            acquireTask();
-            if (!coreTaskExecutor.isTerminated()) {
-                coreTaskExecutor.execute(() -> {
-                    doMonitorAbleTask(poll);
-                    if (!stop) ThreadUtil.execAsync(this::fetchData);
-                });
-            }
+            pollTaskAndExecuteCall(poll);
+
         } catch (Throwable e) {
             log.error("unexpected error", e);
+        }
+    }
+
+    /**
+     * 向队列添加一个任务
+     *
+     * @param taskData 任务数据
+     * @return 添加是否成功
+     */
+    public boolean putTask(T taskData) {
+        if (taskData == null) throw new IllegalArgumentException("taskData is null");
+        return replenishQueue.offer(taskData);
+    }
+
+    /**
+     * 向队列添加一个任务（一直阻塞到成功添加任务）
+     *
+     * @param taskData 任务数据
+     * @throws InterruptedException 线程被中断
+     */
+    public void putTaskBlock(T taskData) throws InterruptedException {
+        if (taskData == null) throw new IllegalArgumentException("taskData is null");
+        replenishQueue.put(taskData);
+    }
+
+    /**
+     * 直接发起任务，不经过队列
+     * <p>当执行器处于暂停、关闭状态下</p>
+     *
+     * @param taskData 任务数据
+     * @throws InterruptedException 线程被中断
+     */
+    public void pollTaskAndExecuteCall(T taskData) throws InterruptedException {
+        if (stop || configs.wait) throw new IllegalStateException("current status is stop");
+        acquireTask();
+        if (!coreTaskExecutor.isTerminated()) {
+            coreTaskExecutor.execute(() -> {
+                doMonitorAbleTask(taskData);
+                if (!stop && dataFetchSyncInterface != null) ThreadUtil.execAsync(this::fetchData);
+            });
         }
     }
 
@@ -274,6 +324,13 @@ public final class TaskActuator<T> {
         Exception ee = null;
         boolean status = false;
         try {
+            if (CollUtil.isNotEmpty(configs.getRateLimiters())) {
+                configs.getRateLimiters().forEach((key, limiter) -> {
+                    if(rateLimitAcceptInterface.accept(key)){
+                        limiter.acquire();
+                    }
+                });
+            }
             taskRunnerSyncInterface.didTaskRunner(poll);
             status = true;
         } catch (Exception e) {
@@ -333,7 +390,7 @@ public final class TaskActuator<T> {
      * 暂停
      */
     public void waiting() {
-        configs.manualWait = true;
+        configs.wait = true;
     }
 
     /**
@@ -342,8 +399,8 @@ public final class TaskActuator<T> {
     public void resume() {
         updateConfigLock.lock();
         try {
-            if (configs.manualWait) {
-                configs.manualWait = false;
+            if (configs.wait) {
+                configs.wait = false;
                 semaphoreForWait.release();
             }
         } finally {
@@ -353,6 +410,7 @@ public final class TaskActuator<T> {
 
     /**
      * 更新核心线程数量
+     *
      * @param threadCount 核心线程数量
      */
     public void updateThreadCount(int threadCount) {

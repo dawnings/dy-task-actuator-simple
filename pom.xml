@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>cn.dawnings</groupId>
     <artifactId>taskActuator</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <name>简单任务执行工具</name>
     <url>http://dawnings.cn</url>
     <properties>
@@ -28,9 +28,13 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.8.26</version>
+            <version>5.8.34</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.3.1-jre</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
