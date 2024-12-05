@@ -19,7 +19,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Opt;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
 import lombok.Setter;
@@ -181,8 +180,8 @@ public final class TaskActuator<T> {
         cacuMonitorRateKeyInterface = configs.getCacuMonitorRateKeyInterface();
         monitorRateMsgAsyncInterface = configs.getMonitorRateMsgAsyncInterface();
         replenishQueue = new LinkedBlockingQueue<>(configs.getTaskLimitMax());
-        if (StrUtil.isBlank(taskName = configs.getTaskName()))
-            taskName = "taskActuator-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4);
+        taskName = configs.getTaskName();
+
         taskActuatorsExecutor = Executors.newSingleThreadScheduledExecutor((r -> {
             Thread t = Executors.defaultThreadFactory().newThread(r);
             t.setName(taskName);
@@ -310,7 +309,7 @@ public final class TaskActuator<T> {
      * @param taskData 任务数据
      * @throws InterruptedException 线程被中断
      */
-    public void pollTaskAndExecuteCall(T taskData) throws InterruptedException,IllegalStateException {
+    public void pollTaskAndExecuteCall(T taskData) throws InterruptedException, IllegalStateException {
         if (stop || configs.wait) throw new IllegalStateException("current status is stop");
         acquireTask();
         if (!coreTaskExecutor.isTerminated()) {

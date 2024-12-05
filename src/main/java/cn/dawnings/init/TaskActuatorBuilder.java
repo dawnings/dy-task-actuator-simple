@@ -11,6 +11,7 @@ import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
 import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
 import com.google.common.annotations.Beta;
 import com.google.common.util.concurrent.RateLimiter;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -27,8 +28,6 @@ public class TaskActuatorBuilder<T> {
      * 任务执行器总线程：taskActuator-name1
      * 任务线程：taskActuator-name1-task-name2
      * 数据采集线程：taskActuator-name1-fetch-name3
-     * 速率监控线程：taskActuator-name1-fillMonitorRate-name4
-     * 通知线程：taskActuator-name1-monitorAlarm-name5
      */
     public final static HashMap<String, TaskActuator<?>> taskActuatorMap = new HashMap<>();
 
@@ -83,8 +82,6 @@ public class TaskActuatorBuilder<T> {
     }
 
     public TaskActuatorBuilder<T> taskName(String taskName) {
-        if (taskActuatorMap.containsKey(taskName))
-            throw new RuntimeException("Task name already exists: " + taskName);
         coreConfig.setTaskName(taskName);
         return this;
     }
@@ -218,10 +215,13 @@ public class TaskActuatorBuilder<T> {
         return this;
     }
 
+    @Synchronized
     public TaskActuator<T> build() {
         if (coreConfig == null) {
             throw new IllegalArgumentException("Core configs are not set for the TaskActuatorBuilder.");
         }
+        if (taskActuatorMap.containsKey(coreConfig.getTaskName()))
+            throw new RuntimeException("Task name already exists: " + coreConfig.getTaskName());
         TaskActuator<T> taskActuators = new TaskActuator<>();
         taskActuators.setCustomTag(coreConfig.getCustomTag());
         taskActuators.init(coreConfig);

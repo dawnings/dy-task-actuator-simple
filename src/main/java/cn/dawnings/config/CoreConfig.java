@@ -12,6 +12,8 @@ import cn.dawnings.init.TaskActuatorBuilder;
 import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
 import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
 import cn.dawnings.monitor.MonitorRateMsgAsyncInterface;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.google.common.annotations.Beta;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.Getter;
@@ -52,7 +54,12 @@ public final class CoreConfig<T> {
     @Setter
     private volatile int pollMinLimit, pollMaxLimit;
 
-    @Getter
+    public String getTaskName() {
+        if (StrUtil.isBlank(taskName))
+            taskName = "taskActuator-" + RandomUtil.randomString(6) + RandomUtil.randomNumbers(4);
+        return taskName;
+    }
+
     @Setter
     private volatile String taskName;
     @Setter

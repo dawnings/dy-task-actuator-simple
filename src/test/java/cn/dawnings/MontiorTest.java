@@ -5,7 +5,6 @@ import cn.dawnings.config.CoreConfig;
 import cn.dawnings.defaults.CacuMonitorRateKeyFor5S;
 import cn.dawnings.dto.ThreadPoolStatus;
 import cn.dawnings.init.TaskActuatorBuilder;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.RandomUtil;
 import org.junit.Test;
@@ -141,8 +140,23 @@ public class MontiorTest {
 
     @Test
     public void test3() {
+        //使用构造器
         TaskActuatorBuilder<TaskData> builder = TaskActuatorBuilder.<TaskData>builder();
-        builder.build();
+        //配置参数
+        builder.initDelay(1000)
+                .pollMinLimit(60)
+                .pollMinLimit(10)
+                .threadCount(10)
+                .taskLimitMax(100)
+                .taskName("yourTasName")
+                .taskRunnerSyncInterface((taskData) -> {
 
+                })
+        ;
+        builder.taskName("yourTasName");
+        //构建执行器
+        TaskActuator<TaskData> taskActuator = builder.build();
+        //启动执行器
+        taskActuator.start();
     }
 }
