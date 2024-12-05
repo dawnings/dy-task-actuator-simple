@@ -310,7 +310,7 @@ public final class TaskActuator<T> {
      * @param taskData 任务数据
      * @throws InterruptedException 线程被中断
      */
-    public void pollTaskAndExecuteCall(T taskData) throws InterruptedException {
+    public void pollTaskAndExecuteCall(T taskData) throws InterruptedException,IllegalStateException {
         if (stop || configs.wait) throw new IllegalStateException("current status is stop");
         acquireTask();
         if (!coreTaskExecutor.isTerminated()) {
