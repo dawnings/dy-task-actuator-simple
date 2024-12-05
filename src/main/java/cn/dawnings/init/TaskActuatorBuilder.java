@@ -134,7 +134,7 @@ public class TaskActuatorBuilder<T> {
      * @param dataFetchSyncInterface 数据抓取接口
      * @return this
      */
-    public TaskActuatorBuilder<T> dataFetchInterface(DataFetchSyncInterface<T> dataFetchSyncInterface) {
+    public TaskActuatorBuilder<T> dataFetchSyncInterface(DataFetchSyncInterface<T> dataFetchSyncInterface) {
         coreConfig.setDataFetchSyncInterface(dataFetchSyncInterface);
         return this;
     }
@@ -145,7 +145,7 @@ public class TaskActuatorBuilder<T> {
      * @param taskRunnerSyncInterface 任务执行接口
      * @return this
      */
-    public TaskActuatorBuilder<T> taskRunnerInterface(TaskRunnerSyncInterface<T> taskRunnerSyncInterface) {
+    public TaskActuatorBuilder<T> taskRunnerSyncInterface(TaskRunnerSyncInterface<T> taskRunnerSyncInterface) {
         coreConfig.setTaskRunnerSyncInterface(taskRunnerSyncInterface);
         return this;
     }
@@ -153,27 +153,27 @@ public class TaskActuatorBuilder<T> {
     /**
      * 设定任务执行完回调接口
      *
-     * @param taskCallBacksyncInterface 回调接口
+     * @param taskCallBackAsyncInterface 回调接口
      * @return this
      */
-    public TaskActuatorBuilder<T> taskCallBackInterface(TaskCallBackAsyncInterface<T> taskCallBacksyncInterface) {
-        coreConfig.setTaskCallBacksyncInterface(taskCallBacksyncInterface);
+    public TaskActuatorBuilder<T> taskCallBacksyncInterface(TaskCallBackAsyncInterface<T> taskCallBackAsyncInterface) {
+        coreConfig.setTaskCallBacksyncInterface(taskCallBackAsyncInterface);
         return this;
     }
 
 
-    public TaskActuatorBuilder<T> monitorDataFetchInterface(MonitorDataFetchAsyncInterface<T> monitorDataFetchAsyncInterface) {
+    public TaskActuatorBuilder<T> monitorDataFetchAsyncInterface(MonitorDataFetchAsyncInterface<T> monitorDataFetchAsyncInterface) {
         coreConfig.setMonitorDataFetchAsyncInterface(monitorDataFetchAsyncInterface);
         return this;
     }
 
 
-    public TaskActuatorBuilder<T> monitorCacuRateInterface(CacuMonitorRateKeyInterface cacuMonitorRateKeyInterface) {
+    public TaskActuatorBuilder<T> cacuMonitorRateKeyInterface(CacuMonitorRateKeyInterface cacuMonitorRateKeyInterface) {
         coreConfig.setCacuMonitorRateKeyInterface(cacuMonitorRateKeyInterface);
         return this;
     }
 
-    public TaskActuatorBuilder<T> monitorRateDealInterface(MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface) {
+    public TaskActuatorBuilder<T> monitorRateMsgAsyncInterface(MonitorRateMsgAsyncInterface monitorRateMsgAsyncInterface) {
         coreConfig.setMonitorRateMsgAsyncInterface(monitorRateMsgAsyncInterface);
         return this;
     }
