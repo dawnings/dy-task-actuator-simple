@@ -1,7 +1,7 @@
 ---
 title: 待遇任务执行器（dy-task-actuator-simple）文档
 date: 2024-12-05T12:42:27Z
-lastmod: 2024-12-05T14:29:19Z
+lastmod: 2024-12-05T14:39:38Z
 tags: [Java,dy-task-actuator-simple]
 ---
 
@@ -42,8 +42,9 @@ dtas 通过 `hutool`​ 和 `guava`​ 减少造轮子。
 
 所有依赖如下：
 
+|`artifactId`​|`groupId`​|`version`​|`scope`​|
+| -------------------| -------------------| -------------------| -------------------|
 |​`lombok`​|​`org.projectlombok`​|​`1.18.26`​|​`provided`​|
-| ----| ----| ----| ----|
 |​`slf4j-api`​|​`org.slf4j`​|​`2.0.16`​|​`provided`​|
 |​`hutool-all`​|​`cn.hutool`​|​`5.8.34`​|​`compile`​|
 |​`guava`​|​`com.google.guava`​|​`33.3.1-jre`​|​`compile`​|
@@ -51,8 +52,9 @@ dtas 通过 `hutool`​ 和 `guava`​ 减少造轮子。
 
 项目构建环境如下：
 
+|name|version|
+| ---------------------| ------------------------|
 |​`jdk`​|​`8`​|
-| ----| ----|
 |​`maven`​|​`3.6.3`​<br />|
 
 # 功能清单
