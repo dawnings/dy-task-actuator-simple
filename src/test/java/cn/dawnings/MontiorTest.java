@@ -40,7 +40,11 @@ public class MontiorTest {
                 .taskRunnerSyncInterface((taskData) -> {
                     final String name = Thread.currentThread().getName();
 //                    System.out.println("runt:" + name);
-                    Thread.sleep(RandomUtil.randomInt(1000, 4000));
+                    try {
+                        Thread.sleep(RandomUtil.randomInt(1000, 4000));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     System.out.print(".");
                 })
                 .monitorRateMsgAsyncInterface((m) -> {
@@ -83,7 +87,11 @@ public class MontiorTest {
 //                    }
 //                })
                 .taskRunnerSyncInterface((taskData) -> {
-                    Thread.sleep(RandomUtil.randomInt(500, 3000));
+                    try {
+                        Thread.sleep(RandomUtil.randomInt(500, 3000));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 })
                 .cacuMonitorRateKeyInterface(new CacuMonitorRateKeyFor5S())
                 .monitorRateMsgAsyncInterface((m) -> {

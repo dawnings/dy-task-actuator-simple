@@ -332,7 +332,7 @@ public final class TaskActuator<T> {
                     }
                 });
             }
-            taskRunnerSyncInterface.didTaskRunner(poll);
+            taskRunnerSyncInterface.didTaskRunner(TaskRunnerDto.<T>builder().taskName(taskName).taskData(poll).build());
             status = true;
         } catch (Exception e) {
             ee = e;
