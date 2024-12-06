@@ -5,10 +5,7 @@ import cn.dawnings.coustoms.DataFetchSyncInterface;
 import cn.dawnings.coustoms.RateLimitAcceptInterface;
 import cn.dawnings.coustoms.TaskCallBackAsyncInterface;
 import cn.dawnings.coustoms.TaskRunnerSyncInterface;
-import cn.dawnings.dto.MonitorDataFetchDto;
-import cn.dawnings.dto.MontorRateMsgDto;
-import cn.dawnings.dto.TaskCallBackDto;
-import cn.dawnings.dto.ThreadPoolStatus;
+import cn.dawnings.dto.*;
 import cn.dawnings.init.TaskActuatorBuilder;
 import cn.dawnings.monitor.CacuMonitorRateKeyInterface;
 import cn.dawnings.monitor.MonitorDataFetchAsyncInterface;
@@ -227,29 +224,33 @@ public final class TaskActuator<T> {
             int fetchCount = replenishQueue.remainingCapacity();
             if (fetchCount < configs.getBatchLimitMin()) {
                 if (monitorDataFetchAsyncInterface != null)
-                    ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(-1).eplenishQueueRemain(fetchCount).build()));
+                    ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(-1).eplenishQueueRemain(fetchCount).build()));
                 return;
             }
 
             try {
-                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(1).eplenishQueueRemain(fetchCount).build())));
-                List<T> ts = dataFetchSyncInterface.didDataFetch(lastFatchData, fetchCount);
+                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(1).eplenishQueueRemain(fetchCount).build())));
+                List<T> ts = dataFetchSyncInterface.didDataFetch(DataFetchDto.<T>builder()
+                                .fetchCount(fetchCount)
+                                .taskName(taskName)
+                                .lastFetchData(lastFatchData)
+                        .build());
                 if (CollUtil.isEmpty(ts)) {
                     lastFetchCount = 0;
-                    Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(-1).eplenishQueueRemain(fetchCount).build())));
+                    Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(-1).eplenishQueueRemain(fetchCount).build())));
                     return;
                 }
                 lastFetchCount = ts.size();
                 lastFatchData.addAll(ts);
                 replenishQueue.addAll(ts);
-                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(2).eplenishQueueRemain(fetchCount).fetchedCount(lastFetchCount).build())));
+                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(2).eplenishQueueRemain(fetchCount).fetchedCount(lastFetchCount).build())));
             } catch (Exception e) {
                 log.error(e.getMessage());
-                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(1).eplenishQueueRemain(fetchCount).e(e).build())));
+                Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(1).eplenishQueueRemain(fetchCount).e(e).build())));
             }
             lastFetchTime = LocalDateTime.now();
         } catch (Exception e) {
-            Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitor(MonitorDataFetchDto.builder().taskName(taskName).status(-1).e(e).build())));
+            Opt.ofNullable(monitorDataFetchAsyncInterface).ifPresent(a -> ThreadUtil.execAsync(() -> monitorDataFetchAsyncInterface.monitorFetch(MonitorDataFetchDto.builder().taskName(taskName).status(-1).e(e).build())));
             log.error(e.getMessage());
         } finally {
             semaphoreForFetchDataWait.release();
@@ -366,7 +367,7 @@ public final class TaskActuator<T> {
                 Opt.ofNullable(monitorRateMsgAsyncInterface).ifPresent(a -> {
                     if (monitorRates.values().size() <= 1) return;
                     final AtomicInteger lastSize = (AtomicInteger) monitorRates.values().toArray()[monitorRates.values().size() - 2];
-                    ThreadUtil.execAsync(() -> monitorRateMsgAsyncInterface.monitor(
+                    ThreadUtil.execAsync(() -> monitorRateMsgAsyncInterface.monitorRate(
                             MontorRateMsgDto.builder().rate(cacuMonitorRateKeyInterface.getRate(monitorRates)).key(key).taskName(taskName).lastSize(lastSize.get()).build()
                     ));
                 });

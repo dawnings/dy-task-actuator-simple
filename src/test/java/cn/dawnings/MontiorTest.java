@@ -25,9 +25,9 @@ public class MontiorTest {
 
 
         TaskActuator<TaskData> build = TaskActuatorBuilder.<TaskData>builder(new CoreConfig<>())
-                .dataFetchSyncInterface((lastList, fetchCount) -> {
+                .dataFetchSyncInterface((f) -> {
                     List<TaskData> list = new ArrayList<>();
-                    for (int i = 0; i < fetchCount; i++) {
+                    for (int i = 0; i < f.fetchCount(); i++) {
                         TaskData taskData = new TaskData();
                         taskData.setId(new Snowflake().nextId());
                         list.add(taskData);
@@ -68,9 +68,9 @@ public class MontiorTest {
                 .taskLimitMax(800)
                 .batchLimitMin(200)
                 .pollMinLimit(2)
-                .dataFetchSyncInterface((lastList, fetchCount) -> {
+                .dataFetchSyncInterface((f) -> {
                     List<TaskData> list = new ArrayList<>();
-                    for (int i = 0; i < fetchCount; i++) {
+                    for (int i = 0; i < f.fetchCount(); i++) {
                         TaskData taskData = new TaskData();
 //                        taskData.setId(new Snowflake().nextId());
                         list.add(taskData);

@@ -8,6 +8,6 @@ public interface MonitorDataFetchAsyncInterface<T> {
      * 镜像方法，不应该执行长时间任务
      * @param monitorDto 状态参数
      */
-    void monitor(MonitorDataFetchDto monitorDto);
+    void monitorFetch(MonitorDataFetchDto monitorDto);
 
 }
