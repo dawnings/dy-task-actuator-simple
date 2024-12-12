@@ -35,4 +35,4 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store!/src/test/java/cn/dawnings/MontiorTest.java
+.DS_Store
