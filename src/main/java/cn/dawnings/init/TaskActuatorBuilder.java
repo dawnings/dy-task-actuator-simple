@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Slf4j
 public class TaskActuatorBuilder<T> {
@@ -162,8 +161,8 @@ public class TaskActuatorBuilder<T> {
      * @param taskCallBackAsyncInterface 回调接口
      * @return this
      */
-    public TaskActuatorBuilder<T> taskCallBacksyncInterface(TaskCallBackAsyncInterface<T> taskCallBackAsyncInterface) {
-        coreConfig.setTaskCallBacksyncInterface(taskCallBackAsyncInterface);
+    public TaskActuatorBuilder<T> taskCallBackAsyncInterface(TaskCallBackAsyncInterface<T> taskCallBackAsyncInterface) {
+        coreConfig.setTaskCallBackAsyncInterface(taskCallBackAsyncInterface);
         return this;
     }
 

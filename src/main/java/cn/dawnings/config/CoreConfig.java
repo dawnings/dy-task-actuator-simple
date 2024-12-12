@@ -20,7 +20,6 @@ import lombok.Getter;
 import lombok.Setter;
 import sun.reflect.Reflection;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -68,7 +67,7 @@ public final class CoreConfig<T> {
     private TaskRunnerSyncInterface<T> taskRunnerSyncInterface;
     @Setter
     @Getter
-    private TaskCallBackAsyncInterface<T> taskCallBacksyncInterface;
+    private TaskCallBackAsyncInterface<T> taskCallBackAsyncInterface;
     @Setter
     @Getter
     private DataFetchSyncInterface<T> dataFetchSyncInterface;

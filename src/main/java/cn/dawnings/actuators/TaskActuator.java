@@ -171,7 +171,7 @@ public final class TaskActuator<T> {
         dataFetchSyncInterface = configs.getDataFetchSyncInterface();
         taskRunnerSyncInterface = configs.getTaskRunnerSyncInterface();
         if (taskRunnerSyncInterface == null) throw new IllegalArgumentException("taskRunnerInterface is null");
-        taskCallBacksyncInterface = configs.getTaskCallBacksyncInterface();
+        taskCallBacksyncInterface = configs.getTaskCallBackAsyncInterface();
         rateLimitAcceptInterface = configs.getRateLimitAcceptInterface();
         monitorDataFetchAsyncInterface = configs.getMonitorDataFetchAsyncInterface();
         cacuMonitorRateKeyInterface = configs.getCacuMonitorRateKeyInterface();
