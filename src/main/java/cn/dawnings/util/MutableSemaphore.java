@@ -9,6 +9,7 @@ public class MutableSemaphore {
 
     public MutableSemaphore(int maxPermits) {
         this.maxPermits = maxPermits;
+        this.curPermit = maxPermits;
         semaphore = new TempSemaphore(maxPermits);
     }
 
@@ -27,7 +28,7 @@ public class MutableSemaphore {
     private final TempSemaphore semaphore;
 
     private volatile int maxPermits = 0;
-
+    private volatile int curPermit = 0;
     @Getter
     private volatile boolean deprecated;
 
@@ -41,17 +42,22 @@ public class MutableSemaphore {
             delta *= -1;
             this.semaphore.reducePermits(delta);
         }
+        curPermit += delta;
         this.maxPermits = newMax;
     }
 
+    @Synchronized
     public void release() {
         if (deprecated) throw new IllegalArgumentException("this semaphore is deprecated");
-        this.semaphore.release();
+        if (curPermit > 0)
+            this.semaphore.release();
     }
 
+    @Synchronized
     public void release(int n) {
         if (deprecated) throw new IllegalArgumentException("this semaphore is deprecated");
-        this.semaphore.release(n);
+        if (curPermit > 0)
+            this.semaphore.release(n);
     }
 
     public void acquire() throws InterruptedException {

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class ThreadPoolStatus {
+    private boolean waiting;
     private String taskName;
     private int corePoolSize;
     private int maximumPoolSize;

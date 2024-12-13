@@ -439,7 +439,8 @@ public final class TaskActuator<T> {
         });
         return map;
     }
-
+    public boolean isStop(){return stop;}
+    public boolean isWaiting(){return configs.wait;}
     /**
      * 获取运行状态与参数
      * return 运行状态
@@ -461,6 +462,7 @@ public final class TaskActuator<T> {
         threadPoolStatus.setLastFetchCount(this.getLastFetchCount());
         threadPoolStatus.setLastFetchTime(this.getLastFetchTime());
         threadPoolStatus.setStopping(stop);
+        threadPoolStatus.setWaiting(configs.wait);
         threadPoolStatus.setThreadPoolStopped(this.taskActuatorsExecutor.isShutdown() && taskActuatorsExecutor.isTerminated());
         threadPoolStatus.setTaskActuatorsExecutorStopped(this.coreTaskExecutor.isShutdown() && coreTaskExecutor.isTerminated());
         threadPoolStatus.setFetchDataCount(this.getLastFatchData().size());
