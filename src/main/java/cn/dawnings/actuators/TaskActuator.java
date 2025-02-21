@@ -112,7 +112,7 @@ public final class TaskActuator<T> {
         });
         if (dataFetchSyncInterface != null)
             fetchData();
-        taskActuatorsExecutor.scheduleWithFixedDelay(this::consumeTaskData, configs.getInitDelay(), 20, TimeUnit.MICROSECONDS);
+        taskActuatorsExecutor.scheduleWithFixedDelay(this::consumeTaskData, configs.getInitDelay(), 20, TimeUnit.MILLISECONDS);
     }
 
     public boolean hadShutDown() {
@@ -262,14 +262,18 @@ public final class TaskActuator<T> {
      * 消费任务数据，发起任务，发起数据采集
      */
     private void consumeTaskData() {
-        if (stop) return;
+        if (stop) {
+            log.warn("退出{}", this.taskName);
+            return;
+        }
         try {
             if (configs.wait) {
+                log.warn("暂停{}", this.taskName);
                 semaphoreForWait.acquire();
                 return;
             }
             //利用poll的延迟时间实现超时(定时)更新
-            final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.MINUTES);
+            final T poll = replenishQueue.poll(configs.getPollMaxLimit(), TimeUnit.SECONDS);
             if (poll == null && dataFetchSyncInterface != null) {
                 fetchData();
                 return;

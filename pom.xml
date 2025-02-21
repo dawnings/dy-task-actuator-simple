@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>cn.dawnings</groupId>
     <artifactId>taskActuator</artifactId>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <name>简单任务执行工具</name>
     <url>http://dawnings.cn</url>
     <properties>

@@ -2,12 +2,14 @@ package cn.dawnings;
 
 import cn.dawnings.actuators.TaskActuator;
 import cn.dawnings.config.CoreConfig;
+import cn.dawnings.defaults.CacuMonitorRateKeyFor1M;
 import cn.dawnings.defaults.CacuMonitorRateKeyFor5S;
 import cn.dawnings.dto.ThreadPoolStatus;
 import cn.dawnings.init.TaskActuatorBuilder;
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.RandomUtil;
 import com.google.common.util.concurrent.RateLimiter;
+import lombok.Data;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -16,6 +18,61 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class MontiorTest {
+    static TaskActuator<FileSendDataDto> fileTaskActuator = null;
+    @Data
+    public  static class FileSendDataDto {
+        private Long id;
+        private String filePath;
+        private String fileName;
+        private Integer fileType;
+        private String projectCode;
+        private String supplierName;
+        private String bidName;
+        private String packageName;
+        private String bigClass;
+        private String smallClass;
+
+        private Integer errorCount;
+        /**
+         * 0表示未开始
+         */
+        private int fullLength;
+
+        private double rate;
+        //用于计算进度百分比
+        private int successLength;
+    }
+    @Test
+    public void test5() throws InterruptedException {
+
+        CoreConfig<FileSendDataDto> coreConfig = new CoreConfig<>();
+        fileTaskActuator = TaskActuatorBuilder.builder(coreConfig)
+                .initDelay(1000)
+                .threadCount(15)
+                .taskLimitMax(500)
+                .batchLimitMin(200)
+                .pollMinLimit(5)
+                .pollMaxLimit(8)
+                .dataFetchSyncInterface((x)->{
+                    List<FileSendDataDto> data = new ArrayList<>();
+                    data.add(new FileSendDataDto());
+                    return data;
+                })
+                .taskRunnerSyncInterface((a)->{
+                    System.out.println("run");
+                })
+                .cacuMonitorRateKeyInterface(new CacuMonitorRateKeyFor1M())
+                .monitorRateMsgAsyncInterface((m) -> {
+                    System.out.println(m.key() + "  -----平均1min" + m.rate() + "个任务，最近1min执行了" + m.lastSize() + "个任务");
+                })
+                .build();
+        fileTaskActuator.start();
+        CountDownLatch latch = new CountDownLatch(1);
+        latch.await();
+    }
+
+
+
 
 
     @Test

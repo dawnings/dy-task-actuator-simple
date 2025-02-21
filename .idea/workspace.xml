@@ -4,27 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="49569229-d4cb-4be3-9ab8-25f8977fc4ff" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Readme.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/config/CoreConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/DataFetchInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/MonitorRateDealInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/TaskCallBackInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/coustoms/TaskRunnerInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/defaults/MonitorCacuRateForMinute.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/dto/MonitorRateDto.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/dto/MontorTaskDto.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/init/TaskActuatorBuilder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorCacuRateInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorDataFetchInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorStatusInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/monitor/MonitorTaskInterface.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/util/LimitSizeMap.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/cn/dawnings/MontiorTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/cn/dawnings/TaskData.java" afterDir="false" />
+    <list default="true" id="49569229-d4cb-4be3-9ab8-25f8977fc4ff" name="更改" comment="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/cn/dawnings/MontiorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/cn/dawnings/MontiorTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +25,16 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="customMavenHome" value="$PROJECT_DIR$/../../apache-maven-3.6.3" />
+        <option name="localRepository" value="$PROJECT_DIR$/../../maven-repo" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
+      </MavenGeneralSettings>
+    </option>
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
@@ -57,22 +51,30 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "JUnit.MontiorTest.test (1).executor": "Debug",
     "JUnit.MontiorTest.test.executor": "Debug",
+    "JUnit.MontiorTest.test2.executor": "Debug",
+    "JUnit.MontiorTest.test5.executor": "Debug",
     "Maven. [org.apache.maven.plugins:maven-archetype-plugin:RELEASE:generate].executor": "Run",
     "Maven.task [clean].executor": "Run",
     "Maven.task [package].executor": "Run",
+    "Maven.taskActuator [clean].executor": "Run",
+    "Maven.taskActuator [install].executor": "Run",
+    "Maven.taskActuator [package].executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/Volumes/Codes/fanchen/task/src/main/java/cn/dawnings/config",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "库",
-    "project.structure.proportion": "0.0",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "http.proxy",
+    "settings.editor.selected.configurable": "MavenSettings",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -84,11 +86,23 @@
       <recent name="$PROJECT_DIR$/src" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="cn.dawnings.dto" />
+      <recent name="cn.dawnings.defaults" />
       <recent name="cn.dawnings.monitor" />
       <recent name="cn.dawnings.coustoms" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="JUnit.MontiorTest.test5">
+    <configuration name="MontiorTest.test (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="taskActuator" />
+      <option name="PACKAGE_NAME" value="cn.dawnings" />
+      <option name="MAIN_CLASS_NAME" value="cn.dawnings.MontiorTest" />
+      <option name="METHOD_NAME" value="test" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="MontiorTest.test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="task" />
       <option name="PACKAGE_NAME" value="cn.dawnings" />
@@ -99,8 +113,31 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="MontiorTest.test2" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="taskActuator" />
+      <option name="PACKAGE_NAME" value="cn.dawnings" />
+      <option name="MAIN_CLASS_NAME" value="cn.dawnings.MontiorTest" />
+      <option name="METHOD_NAME" value="test2" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MontiorTest.test5" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="taskActuator" />
+      <option name="PACKAGE_NAME" value="cn.dawnings" />
+      <option name="MAIN_CLASS_NAME" value="cn.dawnings.MontiorTest" />
+      <option name="METHOD_NAME" value="test5" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.MontiorTest.test5" />
+        <item itemvalue="JUnit.MontiorTest.test2" />
+        <item itemvalue="JUnit.MontiorTest.test (1)" />
         <item itemvalue="JUnit.MontiorTest.test" />
       </list>
     </recent_temporary>
@@ -108,13 +145,52 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.23726.103" />
-        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.23726.103" />
+        <option value="bundled-jdk-9823dce3aa75-125ca727e0f0-intellij.indexing.shared.core-IU-243.23654.189" />
+        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-IU-243.23654.189" />
       </set>
     </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat： 使用信号量控制任务发布" />
+    <MESSAGE value="feat： 修复已存在队列" />
+    <MESSAGE value="feat： 新增pollMinLimit，限制数据抓取频率&#10;doc: 在builder中补充主要方法的注释文档" />
+    <MESSAGE value="version: 更新版本好到1.0.3" />
+    <MESSAGE value="fix: 排除slf4j依赖（无需包含在最终的jar中），修复pollMinLimit未处理初始时间是null的问题" />
+    <MESSAGE value="feat：更新插件版本" />
+    <MESSAGE value="fix: 修复任务队列新增错误" />
+    <MESSAGE value="feat: &#10;1. CoreConfig: 不允许重写（不安全）&#10;2. CoreConfig:去除终止线程池参数manualStop&#10;3. CoreConfig:不允许setTaskLimitMax被二次调用，只允许在builder初始化时调用&#10;4. TaskActuator: 不允许重写（不安全）&#10;5. TaskActuator: 调整任务信号量release数量&#10;6. TaskActuator: 调整启动时判断异常，使用IllegalArgumentException。&#10;7. TaskActuator: 使用信号量实现waiting&#10;8. TaskActuator: 禁止手动调用init方法&#10;9. TaskActuator: 通知队列最大只允许等待10个，通知不应该长时间占用&#10;10. TaskActuator: 暂停或停止都会取消数据获取任务,并且延期一秒，放弃1s内的所有任务&#10;11. TaskActuator: 获取不到数据不再延迟等待，现通过lastFetchTime取消任务执行&#10;12. TaskActuator: 任务回调、任务监控、速率令牌监控调整为必触发（如果有），目前不使用异步，视作任务的一部分。已抓取异常。&#10;13. TaskActuator: 任务发布错误改成日志/监控二选一&#10;14. TaskActuator: 内部方法屏蔽，新增一些外部方法（waiting、resume、updateThreadCount、getMonitorRates、getTaskPoolStatus）" />
+    <MESSAGE value="feat: &#10;1. 新增customTag，自定义tag后多实例判断实例作用、线程间数据交互等&#10;2. 取消实例级别锁，使用ReentrantLock，并发读写的字段使用volatile修饰&#10;version: 1.0.5" />
+    <MESSAGE value="feat: &#10;1. 调整部分接口名称与传参&#10;2. 使用异步接口回调调用端（利用hutool），目前暂未测试具体状态&#10;3. 允许动态修改线程数&#10;4. 更新测试代码&#10;version: 1.0.6" />
+    <MESSAGE value="feat: 新增允许限流器功能&#10;version: 1.0.7" />
+    <MESSAGE value="fix: 修复遗漏代码" />
+    <MESSAGE value="fix: 更新build方法" />
+    <MESSAGE value="fix: 允许设定taskName" />
+    <MESSAGE value="fix: pollTaskAndExecuteCall 显式声明IllegalStateException" />
+    <MESSAGE value="doc: 更新文档" />
+    <MESSAGE value="test: 提交测试类" />
+    <MESSAGE value="doc: 提交文档更新" />
+    <MESSAGE value="fix: 修复taskName bug" />
+    <MESSAGE value="fix: rateLimiters使用linkedhashmap" />
+    <MESSAGE value="feat: 变更，数据采集也要获取线程名称" />
+    <MESSAGE value="feat: 变更，任务执行也要获取线程名称" />
+    <MESSAGE value="fix： 调整gitignore文件" />
+    <MESSAGE value="fix： 修正一些方法名" />
+    <MESSAGE value="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8" />
   </component>
 </project>
