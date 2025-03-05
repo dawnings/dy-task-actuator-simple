@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="49569229-d4cb-4be3-9ab8-25f8977fc4ff" name="更改" comment="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8">
+    <list default="true" id="49569229-d4cb-4be3-9ab8-25f8977fc4ff" name="更改" comment="fix： 修正一些方法">
+      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cn/dawnings/actuators/TaskActuator.java" afterDir="false" />
@@ -20,6 +21,7 @@
       <list>
         <option value="Interface" />
         <option value="Class" />
+        <option value="Kotlin Class" />
       </list>
     </option>
   </component>
@@ -37,7 +39,7 @@
     </option>
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -63,6 +65,7 @@
     "Maven.taskActuator [package].executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/Volumes/Codes/fanchen/task/src/main/java/cn/dawnings/config",
@@ -71,10 +74,11 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
+    "project.structure.last.edited": "项目",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "MavenSettings",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "Code Search",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -145,8 +149,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-125ca727e0f0-intellij.indexing.shared.core-IU-243.23654.189" />
-        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-IU-243.23654.189" />
+        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.25659.39" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.25659.39" />
       </set>
     </attachedChunks>
   </component>
@@ -166,7 +170,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat： 使用信号量控制任务发布" />
     <MESSAGE value="feat： 修复已存在队列" />
     <MESSAGE value="feat： 新增pollMinLimit，限制数据抓取频率&#10;doc: 在builder中补充主要方法的注释文档" />
     <MESSAGE value="version: 更新版本好到1.0.3" />
@@ -191,6 +194,7 @@
     <MESSAGE value="fix： 调整gitignore文件" />
     <MESSAGE value="fix： 修正一些方法名" />
     <MESSAGE value="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix： 修正一些方法,令牌不允许客户线程多发，版本号更新1.0.8" />
+    <MESSAGE value="fix： 修正一些方法" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix： 修正一些方法" />
   </component>
 </project>

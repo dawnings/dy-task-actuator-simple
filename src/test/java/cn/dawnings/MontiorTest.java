@@ -16,11 +16,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MontiorTest {
     static TaskActuator<FileSendDataDto> fileTaskActuator = null;
+
     @Data
-    public  static class FileSendDataDto {
+    public static class FileSendDataDto {
         private Long id;
         private String filePath;
         private String fileName;
@@ -42,37 +46,77 @@ public class MontiorTest {
         //用于计算进度百分比
         private int successLength;
     }
+
     @Test
     public void test5() throws InterruptedException {
-
         CoreConfig<FileSendDataDto> coreConfig = new CoreConfig<>();
+
         fileTaskActuator = TaskActuatorBuilder.builder(coreConfig)
-                .initDelay(1000)
-                .threadCount(15)
+                .initDelay(5000)
+                .threadCount(20)
                 .taskLimitMax(500)
-                .batchLimitMin(200)
-                .pollMinLimit(5)
-                .pollMaxLimit(8)
-                .dataFetchSyncInterface((x)->{
-                    List<FileSendDataDto> data = new ArrayList<>();
-                    data.add(new FileSendDataDto());
-                    return data;
+                .batchLimitMin(150)
+                .pollMinLimit(15)
+                .pollMaxLimit(120)
+                .dataFetchSyncInterface((a) -> {
+                    return new ArrayList<>();
                 })
-                .taskRunnerSyncInterface((a)->{
-                    System.out.println("run");
+                .taskRunnerSyncInterface((a) -> {
+                    return;
                 })
                 .cacuMonitorRateKeyInterface(new CacuMonitorRateKeyFor1M())
                 .monitorRateMsgAsyncInterface((m) -> {
                     System.out.println(m.key() + "  -----平均1min" + m.rate() + "个任务，最近1min执行了" + m.lastSize() + "个任务");
                 })
                 .build();
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+//                CheckAliveDto checkAliveDto = innerfsInterface.checkAlive();
+//                boolean isDangerous = checkAliveDto.getDangerous();
+//                log.info("内网服务器状态：{}",checkAliveDto);
+                // 确保 getDangerous() 返回值是可信的
+//                if (isDangerous) {
+//                    fileTaskActuator.waiting();
+//                } else if (coreConfig.wait) {
+//                    fileTaskActuator.resume();
+//                }
+//                System.out.println("检测ing");
+                fileTaskActuator.waiting();
+//                System.out.println("检测end");
+            } catch (Exception e) {
+//                log.error("checkAliveError,推送暂停:", e);
+//                if (!coreConfig.wait) fileTaskActuator.waiting();
+            }
+
+        }, 2, 2,TimeUnit.SECONDS);
+
         fileTaskActuator.start();
+//        CoreConfig<FileSendDataDto> coreConfig = new CoreConfig<>();
+//        fileTaskActuator = TaskActuatorBuilder.builder(coreConfig)
+//                .initDelay(1000)
+//                .threadCount(15)
+//                .taskLimitMax(500)
+//                .batchLimitMin(200)
+//                .pollMinLimit(5)
+//                .pollMaxLimit(8)
+//                .dataFetchSyncInterface((x)->{
+//                    List<FileSendDataDto> data = new ArrayList<>();
+//                    data.add(new FileSendDataDto());
+//                    return data;
+//                })
+//                .taskRunnerSyncInterface((a)->{
+//                    System.out.println("run");
+//                })
+//                .cacuMonitorRateKeyInterface(new CacuMonitorRateKeyFor1M())
+//                .monitorRateMsgAsyncInterface((m) -> {
+//                    System.out.println(m.key() + "  -----平均1min" + m.rate() + "个任务，最近1min执行了" + m.lastSize() + "个任务");
+//                })
+//                .build();
+//        fileTaskActuator.start();
         CountDownLatch latch = new CountDownLatch(1);
         latch.await();
     }
-
-
-
 
 
     @Test
@@ -222,18 +266,18 @@ public class MontiorTest {
         builder.taskName("yourTasName");
 
 //时级限流-每小时100个
-builder.addRateLimiter("hour", RateLimiter.create((double) 100 / 60 / 60));
+        builder.addRateLimiter("hour", RateLimiter.create((double) 100 / 60 / 60));
 //分级限流-每分钟50个
-builder.addRateLimiter("min", RateLimiter.create((double) 50 / 60));
+        builder.addRateLimiter("min", RateLimiter.create((double) 50 / 60));
 //秒级限流-每秒钟10个
-builder.addRateLimiter("sec", RateLimiter.create(10));
+        builder.addRateLimiter("sec", RateLimiter.create(10));
 
 
-LinkedHashMap<String, RateLimiter> rateLimiters = new LinkedHashMap<>();
-rateLimiters.put("hour", RateLimiter.create((double) 100 / 60 / 60));
-rateLimiters.put("min", RateLimiter.create((double) 50 / 60));
-rateLimiters.put("sec", RateLimiter.create(10));
-builder.rateLimiters(rateLimiters);
+        LinkedHashMap<String, RateLimiter> rateLimiters = new LinkedHashMap<>();
+        rateLimiters.put("hour", RateLimiter.create((double) 100 / 60 / 60));
+        rateLimiters.put("min", RateLimiter.create((double) 50 / 60));
+        rateLimiters.put("sec", RateLimiter.create(10));
+        builder.rateLimiters(rateLimiters);
         //构建执行器
         TaskActuator<TaskData> taskActuator = builder.build();
         //启动执行器
